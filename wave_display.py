@@ -7,7 +7,9 @@ from typing import List
 import numpy as np
 from scipy.signal import savgol_filter
 
+#TODO: make this into a class
 
+#creates a window and returns a window and canvas object
 def createWindow():
     master = Tk()
     master.geometry("1536x300")
@@ -17,7 +19,7 @@ def createWindow():
 
 
 
-
+#input is the array to display and the canvas object created with createWindow()
 def graph(arr,canvas:tkinter.Canvas):
     lista = []
 
@@ -30,11 +32,11 @@ def graph(arr,canvas:tkinter.Canvas):
     canvas.create_line(lista)
 
 
-
+#clears the canvas, use before graph() to clear, so that you dont draw over what was already on it
 def clear(canvas):
     canvas.delete("all")
 
-
+#updates the window, input is the window object created with createWindow()
 def update(master:tkinter.Tk):
     master.update()
 
