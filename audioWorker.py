@@ -21,34 +21,25 @@ def audioWorker(mp_queue, mp_queue_vis, mp_queue_audio, RATE, CHUNKSIZE, CHUNKTI
         data = np.array([[0 for i in range(2)] for j in range(CHUNKSIZE)])
         byte_data, audio_input_counter = mp_queue.get()
         np_data = np.frombuffer(byte_data, dtype=np.int16)
-        print(np_data.shape)
-        data[:,0] = np_data[0:2:CHUNKSIZE-2]
-        data[:,1] = np_data[1:2:CHUNKSIZE-1]
+        waveform = np.reshape(np_data, (CHUNKSIZE, 2))
 
-        result = np.reshape(np_data, (CHUNKSIZE, 2))
-      # data shape:
-#(441000, 2)
-#waveform shape:
-#(8827393, 2)
-        audio_loader = AudioAdapter.default()
-        waveform, _ = audio_loader.load('baiana.wav', sample_rate=RATE)
-        start = RATE*30
-        chunk = waveform[start:start + CHUNKTIME*RATE]
         print("audio worker started with audio_input_counter")
         print(audio_input_counter)
-        prediction = separator.separate(result) 
+        prediction = separator.separate(waveform) 
         
         vocals = prediction['vocals']
         bass = prediction['bass']
         drums = prediction['drums']
         other = prediction['other']
 
-
+        #for now only once channnel of result is considered
 
         vocals_mono = vocals[:,0]# / 2 + vocals[:,1] / 2
         bass_mono = bass[:,0]# / 2 + bass[:,1] / 2
         drums_mono = drums[:,0] #/ 2 + drums[:,1] / 2
         other_mono = other[:,0]# / 2 + other[:,1] / 2
+
+        #maybe unnecessary conversions found here
 
         vocals_mono_abs = np.abs(vocals_mono)
         bass_mono_abs = np.abs(bass_mono)
@@ -70,13 +61,18 @@ def audioWorker(mp_queue, mp_queue_vis, mp_queue_audio, RATE, CHUNKSIZE, CHUNKTI
         other_downsampled = other_downsampled_temp/1470
         drums_downsampled = drums_downsampled_temp/1470
 
+        #pack up data for visualizer:
+
         vis_data = np.zeros(4)
         vis_data = np.array([vocals_downsampled, bass_downsampled, other_downsampled, drums_downsampled])
+        
+        #make data available for other processes:
 
         mp_queue_audio.put([byte_data, audio_input_counter])
         mp_queue_vis.put([vis_data, audio_input_counter])
 
         
+        #old code that might be recycled:
         """vocals_time, vocals_frequency, vocals_confidence, vocals_activation = crepe.predict(vocals_mono, RATE, model_capacity='tiny', viterbi=True)
         other_time, other_frequency, other_confidence, other_activation = crepe.predict(other_mono, RATE, model_capacity='tiny', viterbi=True)
         bass_time, bass_frequency, bass_confidence, bass_activation = crepe.predict(bass_mono, RATE, model_capacity='tiny', viterbi=True)
@@ -150,9 +146,11 @@ def audioWorker(mp_queue, mp_queue_vis, mp_queue_audio, RATE, CHUNKSIZE, CHUNKTI
         print('vocals_frequency length')
         print(vocals_frequency.size)
         
-        
-        
         print('time for audio loop:')"""
+
+
+
+
         time_end = tm.perf_counter()
         print(time_end - time_begin)
 

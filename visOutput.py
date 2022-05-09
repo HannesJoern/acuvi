@@ -7,11 +7,10 @@ import matplotlib.animation as animation
 from multiprocess import Process, Queue
  
 #fig, (ax1 , ax2, ax3, ax4)= plt.subplots(4)
+
+
+
 fig, ax = plt.subplots()
-#ax = fig.add_subplot()
-
-
-#vis_data = np.array([[0 for i in range(300)] for i in range(4)])
 time_new_chunk = tm.time()
 delay = 0
 vis_frame = np.array([[[0 for i in range(300)] for j in range(4)] for k in range(100)])
@@ -25,7 +24,6 @@ def animate(i, mp_queue_vis, mp_queue_delay, RATE, CHUNKSIZE, CHUNKTIME, FPS):
         vis_data, vis_counter = mp_queue_vis.get()
         vis_frame[vis_counter + 1] = vis_data
         print("vis data " + str(vis_counter) + " came in!")
-        print(vis_data.shape)
 
     
     while not mp_queue_delay.empty():
@@ -34,12 +32,6 @@ def animate(i, mp_queue_vis, mp_queue_delay, RATE, CHUNKSIZE, CHUNKTIME, FPS):
         delay = time_new_chunk - audio_output_time 
         print("delay data " + str(audio_output_counter) + " came in with delay: " + str(delay))
 
-    #if np.max(vis_data) > 0:
-    #   vis_data = vis_data/np.max(vis_data)
-
-    #print()
-
-   
 
     current_time = tm.time()
     experimental_delay_margin = 0
