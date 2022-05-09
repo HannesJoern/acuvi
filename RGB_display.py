@@ -9,6 +9,7 @@ class RGB_display:
     h = 0.8 #size of window given in percentage relative to the screen size
     equ_frequqencystep=[218.75,437.5,875,1750,3500,7000] # range of frequency bands in fft-visualiation
     
+    #initialiser, x_squares is the number of squares width and y_squares in height
     def __init__(self,x_squares:int,y_squares:int):
         self.x_squares = x_squares
         self.y_squares = y_squares
