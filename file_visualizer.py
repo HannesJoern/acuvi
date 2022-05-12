@@ -25,7 +25,7 @@ masterO.title("Other")
 rgb = RGB_display.RGB_display(24,12)
 rgb.createRgbDisplay()
 position = 0
-secondsPerFrame = 1/(wav_data.samplerate/1536*4)
+secondsPerFrame = 1/(wav_data.samplerate/1536)
 print("done 1 seconds before start")
 time.sleep(1)
 p = vlc.MediaPlayer("music.mp3")
@@ -36,7 +36,7 @@ p.play()
 while True:
 
     timer = time.time()
-    data, pos = wav_data.getFrames(frames=1536*4, position=int((timer-start_time)*wav_data.samplerate))
+    data, pos = wav_data.getFrames(frames=1536, position=int((timer-start_time)*wav_data.samplerate))
     voice = data[0]
     bass = data[1]
     drums = data[2]
