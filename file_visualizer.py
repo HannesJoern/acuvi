@@ -9,7 +9,9 @@ import wav_4_stems
 import wave_display
 
 
-#creates all the windows for visualisation
+#creates all the windows for visualisation, i use vlc for the playback of the files, you can use whatever library or format u like, for this to work
+#you have to have 4 files int the same directory as this file, music.mp3, vocals.wav,bass.wav,drums.wav and other.wav and you have to have vlc installed
+#note if the version of your installed vlc instance (32bit/64bit) has to correspond with your operating system version
 wav_data = wav_4_stems
 
 masterV, canvasV = wave_display.createWindow()
@@ -26,7 +28,7 @@ position = 0
 secondsPerFrame = 1/(wav_data.samplerate/1536*4)
 print("done 1 seconds before start")
 time.sleep(1)
-p = vlc.MediaPlayer("laleh.mp3")
+p = vlc.MediaPlayer("music.mp3")
 start_time = time.time()
 p.play()
 
