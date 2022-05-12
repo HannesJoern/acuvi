@@ -8,6 +8,8 @@ import RGB_display
 import wav_4_stems
 import wave_display
 
+
+#creates all the windows for visualisation
 wav_data = wav_4_stems
 
 masterV, canvasV = wave_display.createWindow()
@@ -28,6 +30,7 @@ p = vlc.MediaPlayer("laleh.mp3")
 start_time = time.time()
 p.play()
 
+#loop for visualistaion
 while True:
 
     timer = time.time()
