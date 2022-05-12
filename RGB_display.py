@@ -114,6 +114,9 @@ class RGB_display:
 
         index = int((l1+l2+l3)/3)-16
         """""""""
+        
+        #new method of determining frequency by counting wave passing through 0 since bass waveform is usually relatively simple, if you want to use fft instead,
+        #comment the uncommented part and uncomment the commented part in thiss method
         zeros = 0
         freq = 0
         for i in range(len(soundData)-1):
