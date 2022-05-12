@@ -6,6 +6,7 @@ import numpy as np
 import pyaudio
 from scipy.io import wavfile
 
+#reads the wav files and stores the data into a dictonary
 samplerate, dataVocals = wavfile.read('vocals.wav')
 print("vocals read:")
 samplerate, dataBass = wavfile.read('bass.wav')
@@ -21,7 +22,7 @@ print("data stored")
 
 
 
-
+#returns the data from sample position to position+frames in a list and returns position aswell
 def getFrames(frames: int,position: int):
     vocals = []
     bass = []
