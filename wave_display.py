@@ -1,11 +1,5 @@
 import tkinter
 from tkinter import *
-from tkinter import ttk
-from random import randint
-from typing import List
-
-import numpy as np
-from scipy.signal import savgol_filter
 
 #TODO: make this into a class
 
