@@ -1,7 +1,7 @@
 # acuvi
 the worlds smartest music visualizer
 
-vis_data: beschreibt wie die led leuchten müssen: array mit länge n (bei n leds) wo jeder index die hexadezimal darstellung
+vis_data: beschreibt wie die led leuchten müssen: array mit länge n (bei n leds) wo jeder wert die hexadezimal darstellung
           der rgb values ist. index n beschreibt die farbe von led nr.n. wenn die leds in einer 2d form sind (also zb rechteck usw.)
           dann ist der oberste linke led nr.0 und der unterste rechte nr. n
 
@@ -17,7 +17,7 @@ so funktioniert das ganze:
                real time separation (1.writes in variable the sample rate of its output -> 2.starts separation -> 3.gets audio data for with a legth of 10 seconds
                -> 4.separates it-> 5.writes the data into the dictionary -> go to step 3)
                
-               creation of data for visulization (gets chunks of the data that is separated -> elaborates the data 
+               creation of data for visulization (gets chunks of the data that is separated -> deletes the data from the source -> elaborates the data 
                -> output looks like what is described in vis_data)
                
                the data for visualization is in the end used to vizualise the sound on whatever media is choosen by the user, be it a window on the computer, led lights,
