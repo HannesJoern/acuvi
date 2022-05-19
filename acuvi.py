@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 stream_flag = 0 #this will be used to eventually exit the program! maybe... someday
 framelength = 10 #size of rotating array to store audio and visual data (buffer of ~4 is necessary, so we use 10)
-audio_output_counter = 0 #number of chunk when audio gets in
-audio_input_counter = 0 #number of chunk when it gets out, corresponds to position in vis_frame
+audio_output_counter = 0 #number of chunk when it gets out, corresponds to position in vis_frame
+audio_input_counter = 0 #number of chunk when audio gets in
 
 #experimental value that works for me
 delay = 0.4
