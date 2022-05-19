@@ -14,6 +14,9 @@ Diese Funktion ist unsere Schnittstelle, die sowohl von realtime spleeter als au
 Sie nimmt spleeter-daten (rohe audio daten) und gibt n vis_samples (in hexadezimal) aus.
 Die funktion ist in einer Klasse, die in ihrem Konstruktor alle Parameter entgegennimmt.
 
+
+
+
 alte beschreibung:
 
 spleeter_data: (einen dictionary mit 4 einträge:(voice,drums,bass,other) diese einträge sind listen die an stelle n den n-ten sample beinhalten
