@@ -7,7 +7,7 @@ vis_sample: beschreibt wie die led leuchten müssen: array mit länge n (bei n l
 
 spleeter_data: daten von spleeter, genauso wie spleeter sie ausgibt in der python API. wahrscheinlich ist das auch fast das gleiche, wie wenn man die .wav Dateien einliest
 
-# # visualizer(spleeter_data)
+## visualizer(spleeter_data)
 ## return array of / list of n vis_samples:
 Diese Funktion ist unsere Schnittstelle, die sowohl von realtime spleeter als auch von file-based spleeter benutzt wird und so ausgetauscht werden kann.
 Sie nimmt spleeter-daten (rohe audio daten) und gibt n vis_samples (in hexadezimal) aus.
