@@ -6,7 +6,7 @@ import pafy
 #stream = stream_url.getbestaudio()
 #stream.download('C:\\Users\\emhz\\Documents\\Python\\acuvi\\audio_input\\downloaded_files\\Oliver_Heldens_X_Becky_Hill_-_Gecko_Overdrive_(Stop_Thief_Remix).webm')
 
-print('\nwelcome, type help to see commands,\nthe only avalable factory type is youtube for now, type yt or youtube\n')
+print('\nwelcome, type help to see commands,\nthe only avalable factory type is youtube for now, type yt or youtube\nIMPORTANT download the latest version of ffmpeg and put it in your C: directory')
 val = input("select factory type from yt\stream: ")
 factory = input_factory.factory(input_type=val)
 
