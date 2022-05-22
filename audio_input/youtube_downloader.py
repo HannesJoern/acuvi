@@ -1,13 +1,23 @@
 import pafy
 from youtubesearchpython import VideosSearch
-from multiprocessing import Process,Queue
+import os
+from os import listdir
+from os.path import isfile, join
 
 #youtube_dl package has to be installed for this to work
-
 class youtube_downloader:
-    def __init__(self) -> None:
+    def __init__(self,path) -> None:
+        self.path = path
         self.downloaded_file_names = []
         self.url_list = []
+        path_ = self.path+'\\downloaded_files'
+        onlyfiles = [f for f in listdir(path_) if isfile(join(path_, f))]
+        onlyfiles.remove('downloaded_files_readme.txt')
+        for i in onlyfiles:
+            filename, file_extension = os.path.splitext(i)
+            self.downloaded_file_names.append([filename,file_extension[1:]])
+
+
 
     #adds url to download to the url_list
     def add_url(self,url):
@@ -21,7 +31,7 @@ class youtube_downloader:
         stream = stream_url.getbestaudio()
         extension = stream.extension
         name = self.get_name(url)
-        stream.download(filepath="audio_input\\downloaded_files\\" + name + "." + extension)
+        stream.download(filepath=self.path+"\\downloaded_files\\" + name + "." + extension)
         self.downloaded_file_names.append([name,extension])
         return [name,extension]
 
