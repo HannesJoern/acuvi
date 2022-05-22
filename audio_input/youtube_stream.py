@@ -29,7 +29,7 @@ class youtube_stream:
     #converts the first file in the convert queue into a wav file, puts it in "downloaded_files"
     def convert_to_wav(self):
         file_info = self.convert_queue.pop(0)
-        wav_converter.convert_file(name=file_info[0],extension_input=file_info[1],extensoin_output='wav')
+        wav_converter.convert_file(name=file_info[0],extension_input=file_info[1],extensoin_output='wav',path=self.path)
     
     #removes files at index "index" of the list downloaded_files in youtube_downloader
     def remove_file(self,index):
