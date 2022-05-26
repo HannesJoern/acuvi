@@ -6,6 +6,7 @@ import numpy as np
 import math
 from sharedFunctions import *
 import audioIO
+import rgbDisplay
 
 import matplotlib.pyplot as plt
 
@@ -13,21 +14,23 @@ import matplotlib.pyplot as plt
 
 stream_flag = 0 #this will be used to eventually exit the program! maybe... someday
 framelength = 10 #size of rotating array to store audio and visual data (buffer of ~4 is necessary, so we use 10)
-audio_output_counter = 0 #number of chunk when it gets out, corresponds to position in vis_frame
-audio_input_counter = 0 #number of chunk when audio gets in
+audio_output_counter = 0 #number of chunk when audio gets in
+audio_input_counter = 0 #number of chunk when it gets out, corresponds to position in vis_frame
 
 #experimental value that works for me
-delay = 0.4
-
+# for LED thing delay = 0.4
+delay = 0.6
 #basic settings (program might still break when changing these)
 RATE=44100
 CHUNKTIME = 10
 CHUNKSIZE = RATE*CHUNKTIME
 FPS = 30
 NUM_PIXELS = 300
-
+empty_color_val = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
+# LED Leiste: empty_color_val = "0x000000"
 #vis_frame is a rotating array of size 10, in which the vis_samples are stored in chunks of size FPS*CHUNKTIME
-vis_frame = np.array([[["0x000000" for j in range(NUM_PIXELS)] for k in range(FPS*CHUNKTIME)] for l in range(framelength)])
+vis_frame = np.array([[[empty_color_val for j in range(NUM_PIXELS)] for k in range(FPS*CHUNKTIME)] for l in range(framelength)])
+RGB = rgbDisplay.RGB_display(150,2)
 
 from audioWorker import audioWorker
 
@@ -36,7 +39,7 @@ def main():
     #necessary to prevent multiprocessing from taking over:
     multiprocess.freeze_support()
 
-    #imports need to be here because of bug in libusb device access
+    """#imports need to be here because of bug in libusb device access
     #initialization of LEDs via USB SPI chip
     import board
     import neopixel_spi as neopixel
@@ -44,7 +47,7 @@ def main():
     PIXEL_ORDER = neopixel.GRB
     spi = board.SPI()
 
-    pixels = neopixel.NeoPixel_SPI(spi, NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False)
+    pixels = neopixel.NeoPixel_SPI(spi, NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False)"""
 
     #these queues are necessary to send and receive data across processes (they are special multiprocessing queues)
     audio_in_queue = Queue()
@@ -61,6 +64,9 @@ def main():
     #start spleeter and visualization process
     audio_worker = Process(target=audioWorker, args=(audio_in_queue, visual_data_queue, audio_out_queue, RATE, CHUNKSIZE, CHUNKTIME, FPS, NUM_PIXELS))
     audio_worker.start()
+
+    #create RGB Display
+    RGB.createRgbDisplay()
 
     #we wait until audio output has started to get initial audio output start time
     while(output_start_time.empty()):
@@ -90,11 +96,14 @@ def main():
             #obtain vis_sample
             vis_sample = vis_frame[audio_output_counter][position]
             
-            #write vis_sample to LEDs
+            #write vis_sample to RGB Display
+            RGB.colorSquares(vis_sample)
+            RGB.update()
+            """#write vis_sample to LEDs
             for i in range(300):
                 pixels[i] = int(vis_sample[i], 16)
 
-            pixels.show()
+            pixels.show()"""
             
         #this was intended to exit the program but doesnt work
         except KeyboardInterrupt:

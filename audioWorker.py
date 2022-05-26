@@ -41,6 +41,4 @@ def audioWorker(audio_in_queue, visual_data_queue, audio_out_queue, RATE, CHUNKS
 
     return
 
-
-
   
