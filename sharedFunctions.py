@@ -13,7 +13,16 @@ def clamp(a):
     else:
         return int(a)
 
-    
+def rgb_to_hex_display(r, g, b):
+    return "#%02x%02x%02x" % (clamp(r), clamp(g), clamp(b))
+
+def val(value,max,threshold):
+    if value>max:
+        value=max
+    if value<threshold:
+        return 1
+    return value
+
 #vis_sample: 1D-array mit shape 300 und hexadezimalen RGB Werten, womit jede LED in einem sample beschrieben werden kann
 
 #visualization: 3D-array: Sequenz aus vis_samples mit Länge FPS*CHUNKLENGTH = 30 * 10s = 300 
