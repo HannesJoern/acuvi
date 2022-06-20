@@ -14,12 +14,12 @@ class Visualizer():
         self.r_down_freq = self.RATE/self.RATE_FREQUENCY
         self.max_rgb = 255
 
-        self.prev_values = np.array([0 for i in range(120)])
+        self.prev_values = np.array([0 for i in range(142)])
         self.prev_intensity = 0
-        self.prev_frequency_dist = np.array([0 for i in range(120)])
-        self.frequency_dist = np.array([0 for i in range(120)])
+        self.prev_frequency_dist = np.array([0 for i in range(142)])
+        self.frequency_dist = np.array([0 for i in range(142)])
 
-        self.norm_factor = 1 #normalization factor
+        self.norm_factor = 0.5 #normalization factor
         self.frequency_dist_queue = frequency_dist_queue
         print("visualizer initialized!")
 
@@ -28,14 +28,18 @@ class Visualizer():
         while not self.frequency_dist_queue.empty():
             self.frequency_dist = self.frequency_dist_queue.get()
 
-        self.previous_values, keyboard_visualization, strobo = createKeyboardVisualization(waveform, self.frequency_dist, self.prev_values, self.norm_factor)
-        visualization[:120] = keyboard_visualization
-        strobos = np.array([[strobo for i in range(3)] for j in range(12)])
-        trans = np.array([[j/10*strobo for i in range(3)] for j in range(10)])
-        visualization[120:120+10] = trans
-        visualization[130:130+12] = strobos
+        self.previous_values, keyboard_visualization, low_value, high_value = createKeyboardVisualization(waveform, self.frequency_dist, self.prev_values, self.norm_factor)
+        visualization[0:141] = keyboard_visualization[1:]
+
+
+        size = 20
+        #low = np.array([[0, (size-j)/size*low_value, (size-j)/size*low_value] for j in range(size)], dtype=int)
+        #high = np.array([[j/size*high_value for i in range(3)] for j in range(size)], dtype=int)
+
+        #visualization[0:size] += low
+        #visualization[140-size:140] += high
         return visualization
-@numba.jit
+#@numba.jit
 def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor):
     intensity = 0
     if np.any(waveform):
@@ -43,26 +47,53 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
     redfac = 1
     greenfac = 1
     bluefac = 1
-    keyboard_visualization = np.array([[0 for j in range(3)] for i in range(120)])
+    keyboard_visualization = np.array([[0 for j in range(3)] for i in range(142)], dtype = float)
 
-    for j in range(120):
+    for j in range(142):
 
         value = np.abs(np.power(frequency_dist[j], 3) * intensity * norm_factor)
-        temp_factor = 0.95
+        temp_factor = 0.9
         value = value + temp_factor * prev_values[j]
 
-        if j<40:
+        if j < 20:
             redfac = 1 * np.power(j / 40, 2)
-            greenfac = 1 * np.power(j / 80, 2)
+            greenfac = 1 * np.power((20 - j)/20, 2)
             bluefac = 1
-        if j>=40 and j<80:
+            value = np.abs(np.power(frequency_dist[j], 2) * intensity * norm_factor)
+            temp_factor = 0.65
+            value = value + temp_factor * prev_values[j]
+
+        if j >= 20 and j < 40:
+            redfac = 1 * np.power(j / 40, 2)
+            greenfac = 1 * np.power(j / 60, 2)
+            bluefac = 1
+            value = np.abs(np.power(frequency_dist[j], 2) * intensity * norm_factor)
+            temp_factor = 0.75
+            value = value + temp_factor * prev_values[j]
+
+        if j>=40 and j<60:
             redfac = 1
-            greenfac = 1 * np.power(j/80, 2)
-            bluefac = 1 * np.power((120 - j)/80, 2)
-        if j>=80 and j<120:
-            redfac = 1 * np.power((120 - j)/40, 2)
+            greenfac = 1 * np.power(j/60, 2)
+            bluefac = 1 * np.power((80 - j)/60, 2)
+
+        if j>=60 and j<80:
+            redfac = 1 * np.power((80 - j)/20, 2)
             greenfac = 1
-            bluefac = 1 * np.power((120 - j)/80, 2)
+            bluefac = 1 * np.power((80 - j)/40, 2)
+
+        if j>=80 and j<100:
+            redfac = 1 * np.power((j - 80)/20, 2)
+            greenfac = 1
+            bluefac = 1 * np.power((j - 80)/20, 2)
+
+        if j>=100 and j<142:
+            redfac = 1
+            greenfac = 1
+            bluefac = 1
+
+            value = np.abs(np.power(frequency_dist[j], 5) * intensity * norm_factor)
+            temp_factor = 0.65
+            value = value + temp_factor * prev_values[j]
         
         rgb_max = 255
         if value > rgb_max:
@@ -73,4 +104,15 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         keyboard_visualization[j] = np.array([int(redfac*value), int(greenfac*value), int(bluefac*value)])
         prev_values[j] = value
 
-    return prev_values, keyboard_visualization, intensity * 0.008
+    for l in range(keyboard_visualization.size):
+        if l == 0:
+            pass
+        if l >= 0 and l < 139:
+            keyboard_visualization[l] += keyboard_visualization[l-1]/5 + keyboard_visualization[l+1]/5
+        if l == keyboard_visualization.size - 1:
+            pass
+    
+    low_value = np.sum(frequency_dist[11:50])/frequency_dist[11:50].size
+    high_value = np.sum(frequency_dist[75:frequency_dist.size])/frequency_dist[75:frequency_dist.size].size
+
+    return prev_values, keyboard_visualization, np.power(low_value, 3)*intensity*10, np.power(high_value,3)*intensity*10

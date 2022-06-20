@@ -4,7 +4,6 @@ import time as tm
 
 class AudioIn:
     def __init__(self, RATE, RATE_INTENSITY, audio_in_queue):
-        self.audio_input_counter = 0 #this starts at zero and with each audio input it gets increased by 1, then it gets cut of above framelength with (% framelength) to make the array rotate
         self.RATE = RATE
         self.audio_in_queue = audio_in_queue
         self.CHUNKSIZE = RATE/RATE_INTENSITY

@@ -8,7 +8,6 @@ from multiprocess import Process, Queue
 def audioWorker(audio_in_queue, visual_data_queue, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS, frequency_dist_queue, fft_audio_in_queue):
     print("audioWorker started!")
 
-
     waveform_for_fft = np.array([0 for i in range(int(RATE/RATE_FREQUENCY))])
     fft_data_counter = 0
 
