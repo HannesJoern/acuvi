@@ -1,9 +1,10 @@
 import numpy as np
 from sharedFunctions import *
 import numba
+import time as tm
 
 class Visualizer():
-    def __init__(self, RATE, RATE_INTENSITY, RATE_FREQUENCY, frequency_dist_queue, NUM_PIXELS):
+    def __init__(self, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS):
         #current params
         self.RATE = RATE
         self.RATE_INTENSITY = RATE_INTENSITY
@@ -20,25 +21,17 @@ class Visualizer():
         self.frequency_dist = np.array([0 for i in range(142)])
 
         self.norm_factor = 0.5 #normalization factor
-        self.frequency_dist_queue = frequency_dist_queue
         print("visualizer initialized!")
 
-    def visualize(self, waveform):
+    def visualize(self, waveform, frequency_dist):
+        time_begin = tm.perf_counter()
         visualization = np.array([[0 for i in range(3)] for i in range(self.NUM_PIXELS)])
-        while not self.frequency_dist_queue.empty():
-            self.frequency_dist = self.frequency_dist_queue.get()
-
-        self.previous_values, keyboard_visualization, low_value, high_value = createKeyboardVisualization(waveform, self.frequency_dist, self.prev_values, self.norm_factor)
+        self.previous_values, keyboard_visualization = createKeyboardVisualization(waveform, frequency_dist, self.prev_values, self.norm_factor)
         visualization[0:141] = keyboard_visualization[1:]
-
-
-        size = 20
-        #low = np.array([[0, (size-j)/size*low_value, (size-j)/size*low_value] for j in range(size)], dtype=int)
-        #high = np.array([[j/size*high_value for i in range(3)] for j in range(size)], dtype=int)
-
-        #visualization[0:size] += low
-        #visualization[140-size:140] += high
+        time_end = tm.perf_counter()
+        print("visualizer time: " + str(time_end - time_begin))
         return visualization
+
 #@numba.jit
 def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor):
     intensity = 0
@@ -112,7 +105,4 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         if l == keyboard_visualization.size - 1:
             pass
     
-    low_value = np.sum(frequency_dist[11:50])/frequency_dist[11:50].size
-    high_value = np.sum(frequency_dist[75:frequency_dist.size])/frequency_dist[75:frequency_dist.size].size
-
-    return prev_values, keyboard_visualization, np.power(low_value, 3)*intensity*10, np.power(high_value,3)*intensity*10
+    return prev_values, keyboard_visualization

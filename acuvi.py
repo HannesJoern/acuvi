@@ -6,16 +6,14 @@ import numpy as np
 import math
 from sharedFunctions import *
 import audioIn
-from audioWorker import audioWorker
-from fftWorker import fftWorker
-from matplotlib import pyplot as plt
+import audioWorker
 
-mode = 0 # 1 = rgb display, 0 = LEDs
+mode = 1 # 1 = rgb display, 0 = LEDs
 
 #basic settings (program might still break when changing these)
 RATE=44100
-RATE_INTENSITY = 60
-RATE_FREQUENCY = 20
+RATE_INTENSITY = 30
+RATE_FREQUENCY = 30
 
 NUM_PIXELS = 143
 empty_color_val = "0x000000" #LED Leiste
@@ -28,13 +26,9 @@ def main():
 
     #these queues are necessary to send and receive data across processes (they are special multiprocessing queues)
     audio_in_queue = Queue()
-    visual_data_queue = Queue()
 
-    fft_audio_in_queue = Queue()
-    frequency_dist_queue = Queue()
     #start spleeter and visualization process
-    audio_worker = Process(target=audioWorker, args=(audio_in_queue, visual_data_queue, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS, frequency_dist_queue, fft_audio_in_queue))
-    audio_worker.start()
+    audio_processor = audioWorker.audioWorkerino(RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS)
 
     #initialize audio IO
     audio_in = audioIn.AudioIn(RATE, RATE_INTENSITY, audio_in_queue)
@@ -42,8 +36,6 @@ def main():
     audio_in_worker = Process(target=audio_in.audioInWorker, args=())
     audio_in_worker.start()
 
-    fft_worker = Process(target=fftWorker, args=(fft_audio_in_queue, frequency_dist_queue, RATE, RATE_FREQUENCY, NUM_PIXELS))
-    fft_worker.start()
     
     if mode == 0:
         #imports need to be here because of bug in libusb device access
@@ -62,11 +54,14 @@ def main():
     #start the visualization loop
     visualization = np.array([[0 for i in range(3)] for i in range(NUM_PIXELS)])
     while True: 
-        try:   
+        try:
             #get visual data from processing queue
-            while not visual_data_queue.empty():
-                visualization = visual_data_queue.get()
+            while audio_in_queue.empty():
+                tm.sleep(0.005)
+            while not audio_in_queue.empty():
+                byte_data = audio_in_queue.get()
 
+            visualization = audio_processor.audioWorker(byte_data)
             if mode == 0:
                 #write vis_sample to LEDs
                 for i in range(NUM_PIXELS):
@@ -89,7 +84,6 @@ def main():
         #this was intended to exit the program but doesnt work
         except KeyboardInterrupt:
             audio_in.terminate()
-            audio_worker.join()
 
 #somehow necessary i dont know python
 if __name__ == '__main__':
