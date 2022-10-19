@@ -27,27 +27,23 @@ class Visualizer():
         visualization = np.array([[0 for i in range(3)] for i in range(self.NUM_PIXELS)])
         while not self.frequency_dist_queue.empty():
             self.frequency_dist = self.frequency_dist_queue.get()
-
-        self.previous_values, keyboard_visualization, low_value, high_value = createKeyboardVisualization(waveform, self.frequency_dist, self.prev_values, self.norm_factor)
+        keyboard_visualization = np.array([[0 for j in range(3)] for i in range(142)], dtype = float)
+        self.previous_values, keyboard_visualization = createKeyboardVisualization(waveform, self.frequency_dist, self.prev_values, self.norm_factor, keyboard_visualization)
         visualization[0:141] = keyboard_visualization[1:]
 
 
-        size = 20
-        #low = np.array([[0, (size-j)/size*low_value, (size-j)/size*low_value] for j in range(size)], dtype=int)
-        #high = np.array([[j/size*high_value for i in range(3)] for j in range(size)], dtype=int)
 
-        #visualization[0:size] += low
-        #visualization[140-size:140] += high
         return visualization
-#@numba.jit
-def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor):
+        
+@numba.jit(nopython=True)
+def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor, keyboard_visualization):
     intensity = 0
     if np.any(waveform):
         intensity = np.max(np.abs(waveform))
     redfac = 1
     greenfac = 1
     bluefac = 1
-    keyboard_visualization = np.array([[0 for j in range(3)] for i in range(142)], dtype = float)
+    
 
     for j in range(142):
 
@@ -104,15 +100,18 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         keyboard_visualization[j] = np.array([int(redfac*value), int(greenfac*value), int(bluefac*value)])
         prev_values[j] = value
 
-    for l in range(keyboard_visualization.size):
-        if l == 0:
-            pass
-        if l >= 0 and l < 139:
-            keyboard_visualization[l] += keyboard_visualization[l-1]/5 + keyboard_visualization[l+1]/5
-        if l == keyboard_visualization.size - 1:
-            pass
-    
-    low_value = np.sum(frequency_dist[11:50])/frequency_dist[11:50].size
-    high_value = np.sum(frequency_dist[75:frequency_dist.size])/frequency_dist[75:frequency_dist.size].size
+    keyboard_visualization = spatial_blurring(keyboard_visualization)
+    return prev_values, keyboard_visualization
 
-    return prev_values, keyboard_visualization, np.power(low_value, 3)*intensity*10, np.power(high_value,3)*intensity*10
+
+@numba.jit(nopython=True)
+def spatial_blurring(keyboard_visualization):
+    alternative_hack_to_pass_keyword = 0
+    for l in range(142):
+        if l == 0:
+            alternative_hack_to_pass_keyword = 1
+        if l >= 0 and l < 139:
+            keyboard_visualization[l] = keyboard_visualization[l] + keyboard_visualization[l-1]/5 + keyboard_visualization[l+1]/5
+        if l == 141:
+            alternative_hack_to_pass_keyword = 1
+    return keyboard_visualization
