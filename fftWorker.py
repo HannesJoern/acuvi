@@ -41,7 +41,7 @@ def piano_key_to_freq(key):
     freq = 440 * np.power(2, (key-49)/12)
     return freq
 
-#@numba.jit(nopython=True)
+@numba.jit(nopython=True)
 def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data):
     step = RATE/len(audiosample)
     for j in range(frequency_dist.size):
