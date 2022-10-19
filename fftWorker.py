@@ -23,9 +23,10 @@ def fftWorker(fft_audio_in_queue, frequency_dist_queue, RATE, RATE_FREQUENCY, NU
         frequency_dist = map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data)
         time_end = tm.perf_counter()
         frequency_dist_queue.put(frequency_dist)
+        print(time_end-time_begin)
     return    
 
-#@numba.jit
+@numba.jit(nopython=True)
 def freq_to_piano_key(freq):
     key = 12 * np.log2(freq/440) + 49
     if key < 0:
@@ -33,15 +34,14 @@ def freq_to_piano_key(freq):
         print("key was smaller than 0, that really shouldnt happpen /: 'twas: " + str(key))
     return round(key)
 
-#@numba.jit
+@numba.jit(nopython=True)
 def piano_key_to_freq(key):
     if key < 50:
         return key * 10
     freq = 440 * np.power(2, (key-49)/12)
     return freq
 
-
-#@numba.jit
+#@numba.jit(nopython=True)
 def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data):
     step = RATE/len(audiosample)
     for j in range(frequency_dist.size):
@@ -56,7 +56,7 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data):
 
         value = 0
         if np.any(chunk):
-            chunk = abs(chunk)
+            chunk = np.abs(chunk)
             value = np.sum(chunk)
         frequency_dist[j] = value
 
@@ -66,7 +66,7 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data):
     frequency_dist[start:stop] = normalize(frequency_dist[start:stop])
     return frequency_dist
 
-#@numba.jit
+@numba.jit(nopython=True)
 def normalize(frequency_dist):
     frequency_dist = np.abs(frequency_dist)
     if np.any(frequency_dist):
