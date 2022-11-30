@@ -1,116 +1,197 @@
 import numpy as np
 from sharedFunctions import *
-
+import numba
+import time as tm
 import matplotlib.pyplot as plt
+import scipy.ndimage
+import scipy.signal
 
 class Visualizer():
-    def __init__(self, RATE, CHUNKSIZE, CHUNKTIME, FPS, NUM_PIXELS):
+    def __init__(self, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS):
+        #current params
         self.RATE = RATE
-        self.CHUNKSIZE = CHUNKSIZE
-        self.CHUNKTIME = CHUNKTIME
-        self.FPS = FPS
+        self.RATE_INTENSITY = RATE_INTENSITY
+        self.RATE_FREQUENCY = RATE_FREQUENCY
         self.NUM_PIXELS = NUM_PIXELS
+        self.empty_color_val = np.array([0 for i in range(3)])
+        self.r_down_intens = self.RATE/self.RATE_INTENSITY
+        self.r_down_freq = self.RATE/self.RATE_FREQUENCY
         self.max_rgb = 255
 
+        self.prev_values = np.array([0 for i in range(142)])
+        self.prev_intensity = 0
+        self.prev_frequency_dist = np.array([0 for i in range(142)])
+        self.frequency_dist = np.array([0 for i in range(142)])
+        self.intensity_fac = 10
+        self.norm_factor = 1 #normalization factor
+        print("visualizer initialized!")
 
-        self.len_vis = FPS*CHUNKTIME #size of chunk of vis_samples
-        self.prev_vis_data = np.array([[[0 for i in range(self.len_vis)] for j in range(2)] for k in range(4)])
-        self.r_down = RATE/FPS #downsampling rate
-        init_norm_factor = 1 #normalization factor
-        self.norm_factors = np.array([init_norm_factor for i in range(4)])
-
-
-    def visualize(self, spleeter_data):
-
-        #convert into array
-        vocals = np.array([spleeter_data['vocals'][:,0], spleeter_data['vocals'][:,1]])
-        other = np.array([spleeter_data['other'][:,0], spleeter_data['other'][:,1]])
-        bass = np.array([spleeter_data['bass'][:,0], spleeter_data['bass'][:,1]])
-        drums = np.array([spleeter_data['drums'][:,0], spleeter_data['drums'][:,1]])
-        spleeter_data = np.array([vocals, other, bass, drums])
-
-        #sample down to FPS of visualization
-        vis_data = self.sample_down(spleeter_data)
-
-        #vis_data = self.apply_temp_blur(vis_data) - this feature is not yet used
-
-
-        #normalization to fit into [0 ... 255] RGB value spectrum for each individual part with:
-        vis_data = self.normalize(vis_data)
-        
-        #initialize array of vis_samples
-        visualization = np.array([["0X000000" for j in range(self.NUM_PIXELS)] for k in range(self.len_vis)])
-
-        for i in range(self.len_vis):
-
-            visualization[i][0] = rgb_to_hex(0, 0, vis_data[0][0][i])
-            visualization[i][1] = rgb_to_hex(0, vis_data[1][0][i], vis_data[1][0][i])
-            visualization[i][2] = rgb_to_hex(0, vis_data[2][0][i], 0)
-            visualization[i][3] = rgb_to_hex(vis_data[3][0][i], 0, 0)
-            visualization[i][4] = rgb_to_hex(vis_data[3][1][i], 0, 0)
-            visualization[i][5] = rgb_to_hex(0, vis_data[2][1][i], 0)
-            visualization[i][6] = rgb_to_hex(0, vis_data[1][1][i], vis_data[1][1][i])
-            visualization[i][7] = rgb_to_hex(0, 0, vis_data[0][1][i])
-
-        #array of 300 processed vis_samples
+    def visualize(self, waveform, frequency_dist):
+        time_begin = tm.perf_counter()
+        visualization = np.array([[0 for i in range(3)] for i in range(self.NUM_PIXELS)])
+        keyboard_visualization = np.array([[0 for j in range(3)] for i in range(142)], dtype = float)
+        self.previous_values, keyboard_visualization, self.intensity_fac = createKeyboardVisualization(waveform, frequency_dist, self.prev_values, self.norm_factor, keyboard_visualization, self.intensity_fac)
+        visualization[0:141] = keyboard_visualization[1:]
+        time_end = tm.perf_counter()
+        print("visualizer time: " + str(time_end - time_begin))
         return visualization
 
+def getHarmonics(spectrum):
+    for i in range(len(spectrum)):
+        spectrum[i%12] += spectrum[i]
+    spectrum_harmonics = spectrum[:12]
+    return spectrum_harmonics
 
-        #self.prev_vis_data = vis_data - used for temporal bluring
+def getSpectrumIntensity(spectrum):
+    return np.sum(spectrum)
+
+def getHarmonicPeaks(spectrum_harmonics):
+    return scipy.signal.find_peaks(spectrum_harmonics, prominence = 0.8)[0]
+
+def mapHarmonics(harmonicPeaks, intensity):
+    #intensity in 0...255
+    rep = np.zeros(24)
+    # peak in 0...11
+    for peak in harmonicPeaks:
+        peak = 2 * peak
+        # peak in 0...22
+        offset = 5
+        for i in range(offset):
+            if i == 0 and peak + offset < len(rep) - 1:
+                rep[peak + offset] = intensity/i
+            else:
+                if peak + offset - i >= 0 and peak + offset - i < len(rep) - 1:
+                    rep[peak + offset - i] = intensity/i**2
+                if peak + offset + i < len(rep) - 1 and peak + offset + i >= 0:
+                    rep[peak + offset + i] = intensity/i**2
+    return rep
+
+
+#@numba.jit(nopython=True)
+def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor, keyboard_visualization, intensity_fac):
+    intensity = 0
+    if np.any(waveform):
+        intensity = np.log(np.sum(np.abs(waveform))) * intensity_fac
+    print("intensity: " + str(intensity))
+    intensity_fac = 255/intensity
+    
+    
+    redfac = 1
+    greenfac = 1
+    bluefac = 1
+    
+    """spectras = [frequency_dist[30:60], frequency_dist[60:90]]
+
+    reps = []
+    for spectrum in spectras:
+        harmonic = getHarmonics(spectrum)
+        harmonic_peaks = getHarmonicPeaks(harmonic)
+        intensity = getSpectrumIntensity(spectrum)
+        reps.append(mapHarmonics(harmonic_peaks, intensity))
+    print(reps)
+    
+    
+    values = np.zeros(len(keyboard_visualization) + 1)
+
+    for i in range(len(reps)):
+        values[i*len(reps[0]):i*len(reps[0]) + len(reps[i])] = reps[i]"""
+    kernel = [ 
+        0.0000014867217352114659, 
+        0.00013383042564586007, 
+        0.004431855031086564, 
+        0.05399104715092312, 
+        0.24197108591239316, 
+        0.39894287623816743, 
+        0.24197108591239316, 
+        0.05399104715092312, 
+        0.004431855031086564, 
+        0.00013383042564586007
+    ]
+    smol_kernel = [
+        0.23874320576678076, 
+        0.44603102903819275, 
+        0.23874320576678076
+    ]
+    frequency_dist[0:110] = scipy.ndimage.convolve(frequency_dist[0:110], kernel)
+    frequency_dist[100:] = scipy.ndimage.convolve(frequency_dist[100:], smol_kernel)
+
+    for j in range(142):
+        
+        norm_factor = 1
+        redfac = 1
+        greenfac = 1
+        bluefac = 1
+        if j < 20:
+            redfac = 1 * np.power(j / 40, 2)
+            greenfac = 1 * np.power((20 - j)/20, 2)
+            bluefac = 1
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            temp_factor = 0.85
+
+        if j >= 20 and j < 40:
+            redfac = 1 * np.power(j / 40, 2)
+            greenfac = 1 * np.power(j / 80, 2)
+            bluefac = 1
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            temp_factor = 0.9
+
+        if j>=40 and j<60:
+            redfac = 1
+            greenfac = 1 * np.power(j/80, 2)
+            bluefac = 1 * np.power((80 - j)/60, 2)
+
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            temp_factor = 0.9
+
+
+        if j>=60 and j<80:
+            redfac = 1 * np.power((80 - j)/20, 2)
+            greenfac = 1 * np.power(j/80, 2)
+            bluefac = 1 * np.power((80 - j)/40, 2)
+
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            temp_factor = 0.9
+
+
+        if j>=80 and j<90:
+            redfac = 0.9 * np.power((j - 80)/10, 2)
+            greenfac = 0.9
+            bluefac = 0.8 * np.power((j - 80)/10, 3)
+
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            temp_factor = 0.85
+
+        if j>=90 and j<142:
+            redfac = 1
+            greenfac = 1
+            bluefac = 1
+            norm_factor = 2
+            value = np.abs(frequency_dist[j]**2 * intensity * norm_factor)
+            temp_factor = 0.85
+        if value < prev_values[j]:
+            value = value + temp_factor * prev_values[j]
+        else:
+            value = value - (prev_values[j] - value)*temp_factor
+            
+        prev_values[j] = value
+
+
+        rgb_max = 255
+        if value > rgb_max:
+            value = 255
+        if value < 0:
+            value = 0
+
+        keyboard_visualization[j] = np.array([int(redfac*value), int(greenfac*value), int(bluefac*value)])
         
 
-
-
-    #Updating-Normalization-Factor-Finding-Function that always adjusts to highest observed value in each session, starting with normfac_init
-    def update_norm_factor(self, k, max):
-        if self.norm_factors[k]*max > self.max_rgb:
-            self.norm_factors[k] = self.max_rgb/max
-
-    #normalization function
-    def normalize(self, vis_data):
-        for k in range(4):
-
-
-
-            self.update_norm_factor(k, np.amax(vis_data[k]))
-            vis_data[k] = vis_data[k] * self.norm_factors[k]
-        return vis_data
-
-    #tempural blurring
-    def apply_temp_blur(self, vis_data):
-        # iterate through audio channels
-        for k in range(4):
-            # iterate through r/l:
-            for j in range(2):
-                # iterate through visual samples
-                    for i in range(self.len_vis):
-                            #temporal blurring
-                            if i > 0:    
-                                if vis_data[k][j][i-1] > vis_data[k][j][i]:
-                                    vis_data[k][j][i] = vis_data[k][j][i-1]*0.8
-                            if i == 0:
-                                if self.prev_vis_data[k][j][self.len_vis-1] > vis_data[k][j][i]:
-                                    vis_data[k][j][i] = self.prev_vis_data[k][j][self.len_vis-1]*0.8
-
-        return vis_data
-
-    #downsampling from audio RATE to visualization FPS
-    def sample_down(self, spleeter_data):
-        vis_data = np.array([[[0 for i in range(self.len_vis)] for j in range(2)] for k in range(4)])
-        # iterate through audio channels
-        for k in range(4):
-            # iterate through r/l:
-            for j in range(2):
-                # iterate through visual samples
-                    for i in range(self.len_vis):
-                        # first need to check if there is anything nonzero
-                        if np.any(spleeter_data[k][j][int(i*self.r_down):int((i+1)*self.r_down-1)]):
-                            # to then find the maximum. this is a vis_sample
-                            vis_data[k][j][i] = int(np.max(spleeter_data[k][j][int(i*self.r_down):int((i+1)*self.r_down-1)]))
-        #array of 300 raw vis_samples
-        return vis_data
-
-
-
-
-
+    """for l in range(keyboard_visualization.size):
+        donothing = 0
+        if l == 0:
+            donothing = 1
+        if l >= 0 and l < 139:
+            keyboard_visualization[l] += keyboard_visualization[l-1]/5 + keyboard_visualization[l+1]/5
+        if l == keyboard_visualization.size - 1:
+            donothing = 1"""
+    
+    return prev_values, keyboard_visualization, intensity_fac
