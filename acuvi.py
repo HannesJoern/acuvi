@@ -8,7 +8,7 @@ from sharedFunctions import *
 import audioIn
 import audioWorker
 
-mode = 1 # 1 = rgb display, 0 = LEDs
+mode = 0 # 1 = rgb display, 0 = LEDs
 
 #basic settings (program might still break when changing these)
 RATE=44100
@@ -37,14 +37,13 @@ def main():
     audio_in_worker.start()
 
     
-    if mode == 0:
+    if mode == 1:
         #imports need to be here because of bug in libusb device access
         #initialization of LEDs via USB SPI chip
         import board
-        import neopixel_spi as neopixel
+        import neopixel
         PIXEL_ORDER = neopixel.GRB
-        spi = board.SPI()
-        pixels = neopixel.NeoPixel_SPI(spi, NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False)
+        pixels = neopixel.NeoPixel(board.D18, NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False)
 
     else:
         import rgbDisplay
