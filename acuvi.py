@@ -37,7 +37,7 @@ def main():
     audio_in_worker.start()
 
     
-    if mode == 1:
+    if mode == 0:
         #imports need to be here because of bug in libusb device access
         #initialization of LEDs via USB SPI chip
         import board
