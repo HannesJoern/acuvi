@@ -84,9 +84,9 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, prev_bass_
     stop = frequency_dist.size
     frequency_dist[start:stop] = normalize(frequency_dist[start:stop])
 
-    if bass_sum > 2*np.mean(prev_bass_sums):
-        frequency_dist[0:20] += np.mean(frequency_dist[0:40]) + 0.5
-        print("got triggered")
+#    if bass_sum > 2*np.mean(prev_bass_sums):
+#        frequency_dist[0:20] += np.mean(frequency_dist[0:40]) + 0.5
+#        print("got triggered")
         
     return frequency_dist, prev_bass_sums
 

@@ -2,7 +2,7 @@ import numpy as np
 from sharedFunctions import *
 import numba
 import time as tm
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import scipy.ndimage
 import scipy.signal
 
@@ -83,8 +83,8 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         prev_intensities.pop(0)
         prev_intensities.append(intensity)
     
-    ideal_value = 10000
-    offset = 5000
+    ideal_value = 400
+    offset = 200
     mean_intensity = np.mean(prev_intensities)
     if mean_intensity < ideal_value - offset or mean_intensity > ideal_value + offset:
         intensity_fac = ideal_value/mean_intensity
@@ -126,6 +126,8 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         0.44603102903819275, 
         0.23874320576678076
     ]
+    for j in range(len(frequency_dist) - 1):
+        frequency_dist[j] = frequency_dist[j]**2
     frequency_dist[0:110] = scipy.ndimage.convolve(frequency_dist[0:110], kernel)
     frequency_dist[100:] = scipy.ndimage.convolve(frequency_dist[100:], smol_kernel)
 
@@ -143,8 +145,8 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             bluefac = 1
             norm_factor = 4
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
-            temp_factor = 0.3
-            fall_add_factor = 0.3
+            temp_factor = 0.4
+            fall_add_factor = 0.7
 
         if j >= 20 and j < 40:
             redfac = 1 * np.power(j / 40, 2)
