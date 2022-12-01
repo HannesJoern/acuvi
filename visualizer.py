@@ -19,10 +19,10 @@ class Visualizer():
         self.max_rgb = 255
 
         self.prev_values = np.array([0 for i in range(142)])
-        self.prev_intensity = 0
+        self.prev_intensities = []
         self.prev_frequency_dist = np.array([0 for i in range(142)])
         self.frequency_dist = np.array([0 for i in range(142)])
-        self.intensity_fac = 10
+        self.intensity_fac = 100
         self.norm_factor = 1 #normalization factor
         print("visualizer initialized!")
 
@@ -30,7 +30,7 @@ class Visualizer():
         time_begin = tm.perf_counter()
         visualization = np.array([[0 for i in range(3)] for i in range(self.NUM_PIXELS)])
         keyboard_visualization = np.array([[0 for j in range(3)] for i in range(142)], dtype = float)
-        self.previous_values, keyboard_visualization, self.intensity_fac = createKeyboardVisualization(waveform, frequency_dist, self.prev_values, self.norm_factor, keyboard_visualization, self.intensity_fac)
+        self.previous_values, keyboard_visualization, self.intensity_fac, self.prev_intensities = createKeyboardVisualization(waveform, frequency_dist, self.prev_values, self.norm_factor, keyboard_visualization, self.intensity_fac, self.prev_intensities)
         visualization[0:141] = keyboard_visualization[1:]
         time_end = tm.perf_counter()
         print("visualizer time: " + str(time_end - time_begin))
@@ -68,14 +68,28 @@ def mapHarmonics(harmonicPeaks, intensity):
 
 
 #@numba.jit(nopython=True)
-def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor, keyboard_visualization, intensity_fac):
+def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_factor, keyboard_visualization, intensity_fac, prev_intensities):
+
+
     intensity = 0
     if np.any(waveform):
-        intensity = np.log(np.sum(np.abs(waveform))) * intensity_fac
+        intensity = np.log(np.max(np.abs(waveform))) * intensity_fac
     print("intensity: " + str(intensity))
-    intensity_fac = 255/intensity
+    print("intensity faq is: " + str(intensity_fac))
+
+    if len(prev_intensities) < 100:
+        prev_intensities.append(intensity)
+    else:
+        prev_intensities.pop(0)
+        prev_intensities.append(intensity)
     
-    
+    ideal_value = 10000
+    offset = 5000
+    mean_intensity = np.mean(prev_intensities)
+    if mean_intensity < ideal_value - offset or mean_intensity > ideal_value + offset:
+        intensity_fac = ideal_value/mean_intensity
+
+
     redfac = 1
     greenfac = 1
     bluefac = 1
@@ -121,17 +135,22 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         redfac = 1
         greenfac = 1
         bluefac = 1
+
+        fall_add_factor = 0.8
         if j < 20:
             redfac = 1 * np.power(j / 40, 2)
             greenfac = 1 * np.power((20 - j)/20, 2)
             bluefac = 1
+            norm_factor = 4
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
-            temp_factor = 0.85
+            temp_factor = 0.3
+            fall_add_factor = 0.3
 
         if j >= 20 and j < 40:
             redfac = 1 * np.power(j / 40, 2)
             greenfac = 1 * np.power(j / 80, 2)
             bluefac = 1
+            norm_factor = 4
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
             temp_factor = 0.9
 
@@ -139,6 +158,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             redfac = 1
             greenfac = 1 * np.power(j/80, 2)
             bluefac = 1 * np.power((80 - j)/60, 2)
+            norm_factor = 3
 
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
             temp_factor = 0.9
@@ -148,6 +168,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             redfac = 1 * np.power((80 - j)/20, 2)
             greenfac = 1 * np.power(j/80, 2)
             bluefac = 1 * np.power((80 - j)/40, 2)
+            norm_factor = 3
 
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
             temp_factor = 0.9
@@ -155,8 +176,9 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
 
         if j>=80 and j<90:
             redfac = 0.9 * np.power((j - 80)/10, 2)
-            greenfac = 0.9
+            greenfac = 0.8
             bluefac = 0.8 * np.power((j - 80)/10, 3)
+            norm_factor = 3
 
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
             temp_factor = 0.85
@@ -165,13 +187,16 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             redfac = 1
             greenfac = 1
             bluefac = 1
-            norm_factor = 2
+            norm_factor = 3
             value = np.abs(frequency_dist[j]**2 * intensity * norm_factor)
-            temp_factor = 0.85
+            temp_factor = 0.4
+
+        rise_sub_factor = temp_factor
+        
         if value < prev_values[j]:
-            value = value + temp_factor * prev_values[j]
+            value = value + (prev_values[j] - value)*fall_add_factor
         else:
-            value = value - (prev_values[j] - value)*temp_factor
+            value = value - (value - prev_values[j])*rise_sub_factor
             
         prev_values[j] = value
 
@@ -194,4 +219,4 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         if l == keyboard_visualization.size - 1:
             donothing = 1"""
     
-    return prev_values, keyboard_visualization, intensity_fac
+    return prev_values, keyboard_visualization, intensity_fac, prev_intensities
