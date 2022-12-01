@@ -25,8 +25,9 @@ class audioWorkerino:
         
         np_data = np.frombuffer(byte_data, dtype=np.int16)
         CHUNKSIZE = int(self.RATE/self.RATE_INTENSITY) #????? this might be wrong
-        waveform = np.reshape(np_data, (CHUNKSIZE, 2))
-        waveform_mono = waveform[:,0]
+        waveform_mono = np_data
+       # waveform = np.reshape(np_data, (CHUNKSIZE, 2))
+       # waveform_mono = waveform[:,0]
         #calculate normalized frequency distribution
         frequency_dist = self.fft_processor.fftWorker(waveform_mono)
         #visualize
