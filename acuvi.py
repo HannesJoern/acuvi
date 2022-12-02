@@ -43,7 +43,7 @@ def main():
         import board
         import neopixel
         PIXEL_ORDER = neopixel.GRB
-        pixels = neopixel.NeoPixel(board.D18, NUM_PIXELS, pixel_order=PIXEL_ORDER, auto_write=False)
+        pixels = neopixel.NeoPixel(board.D18, NUM_PIXELS, brightness = 0.5, pixel_order=PIXEL_ORDER, auto_write=False)
 
     else:
         import rgbDisplay

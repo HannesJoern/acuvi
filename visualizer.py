@@ -83,8 +83,8 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         prev_intensities.pop(0)
         prev_intensities.append(intensity)
     
-    ideal_value = 400
-    offset = 200
+    ideal_value = 10000
+    offset = 5000
     mean_intensity = np.mean(prev_intensities)
     if mean_intensity < ideal_value - offset or mean_intensity > ideal_value + offset:
         intensity_fac = ideal_value/mean_intensity
@@ -109,17 +109,44 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
 
     for i in range(len(reps)):
         values[i*len(reps[0]):i*len(reps[0]) + len(reps[i])] = reps[i]"""
+    overtone_kernel = [
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+1,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+-10
+    ]
     kernel = [ 
-        0.0000014867217352114659, 
-        0.00013383042564586007, 
-        0.004431855031086564, 
-        0.05399104715092312, 
-        0.24197108591239316, 
-        0.39894287623816743, 
-        0.24197108591239316, 
-        0.05399104715092312, 
-        0.004431855031086564, 
-        0.00013383042564586007
+0.00007829675330892041, 
+0.0015726323295519597, 
+0.016217391109881296, 
+0.08586281587584525, 
+0.23339933213563108, 
+0.32573500793527993, 
+0.23339933213563108, 
+0.08586281587584525, 
+0.016217391109881296, 
+0.0015726323295519597
     ]
     smol_kernel = [
         0.23874320576678076, 
@@ -127,10 +154,10 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         0.23874320576678076
     ]
     for j in range(len(frequency_dist) - 1):
-        frequency_dist[j] = frequency_dist[j]**2
+        frequency_dist[j] = frequency_dist[j]**3
+#    frequency_dist[10:90] = scipy.ndimage.convolve(frequency_dist[10:90], overtone_kernel)
     frequency_dist[0:110] = scipy.ndimage.convolve(frequency_dist[0:110], kernel)
     frequency_dist[100:] = scipy.ndimage.convolve(frequency_dist[100:], smol_kernel)
-
     for j in range(142):
         
         norm_factor = 1
@@ -138,15 +165,14 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
         greenfac = 1
         bluefac = 1
 
-        fall_add_factor = 0.8
+        fall_add_factor = 0.95
         if j < 20:
             redfac = 1 * np.power(j / 40, 2)
             greenfac = 1 * np.power((20 - j)/20, 2)
             bluefac = 1
             norm_factor = 4
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
-            temp_factor = 0.4
-            fall_add_factor = 0.7
+            temp_factor = 0.9
 
         if j >= 20 and j < 40:
             redfac = 1 * np.power(j / 40, 2)
@@ -183,17 +209,18 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             norm_factor = 3
 
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
-            temp_factor = 0.85
+            temp_factor = 0.9
 
         if j>=90 and j<142:
             redfac = 1
             greenfac = 1
             bluefac = 1
-            norm_factor = 3
-            value = np.abs(frequency_dist[j]**2 * intensity * norm_factor)
-            temp_factor = 0.4
-
-        rise_sub_factor = temp_factor
+            norm_factor = 1
+            value = np.abs(frequency_dist[j] * intensity * norm_factor)
+            fall_add_factor = 0.85
+            temp_factor = 0.6
+        fall_add_factor = 0.3
+        rise_sub_factor = 0.01 #temp_factor
         
         if value < prev_values[j]:
             value = value + (prev_values[j] - value)*fall_add_factor
