@@ -63,7 +63,7 @@ app.layout = html.Div([
         value = 1
     ),
     html.Br(),
-    html.H6("upper half (%)"),
+    html.H6("lower half (%)"),
     dcc.Slider(
         id="slider_lower",
         min=0,
