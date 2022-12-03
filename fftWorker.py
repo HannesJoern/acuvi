@@ -52,15 +52,22 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, prev_bass_
             next_freq = j + 1
             
             chunk = fft_data[freq:next_freq]
-            if j>35:
-                chunk = 2*chunk
-            if j>43:
-                chunk = 3*chunk
+            if j>=35 and j<43:
+                chunk = 1.2*chunk
+            if j>=43 and j<48:
+                chunk = 1.3*chunk
+            if j>=48:
+                chunk = 1.5*chunk
         else:
             freq = piano_key_to_freq(j)
             next_freq = piano_key_to_freq(j + 1)
             chunk = fft_data[int(freq/step):int(next_freq/step)]
-
+            if j < 55:
+                chunk = 0.85*chunk
+            if j >=55 and j <= 58:
+                chunk = 0.9*chunk
+            if j >=58 and j <= 62:
+                chunk = 0.95*chunk 
         value = 0
         if np.any(chunk):
             chunk = np.abs(chunk)

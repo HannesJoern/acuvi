@@ -110,7 +110,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
     for i in range(len(reps)):
         values[i*len(reps[0]):i*len(reps[0]) + len(reps[i])] = reps[i]"""
     overtone_kernel = [
-0,
+-1,
 0,
 0,
 0,
@@ -134,7 +134,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
 0,
 0,
 0,
--10
+0
     ]
     kernel = [ 
 0.00007829675330892041, 
@@ -155,7 +155,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
     ]
     for j in range(len(frequency_dist) - 1):
         frequency_dist[j] = frequency_dist[j]**3
-#    frequency_dist[10:90] = scipy.ndimage.convolve(frequency_dist[10:90], overtone_kernel)
+    frequency_dist[10:90] = scipy.ndimage.convolve(frequency_dist[10:90], overtone_kernel)
     frequency_dist[0:110] = scipy.ndimage.convolve(frequency_dist[0:110], kernel)
     frequency_dist[100:] = scipy.ndimage.convolve(frequency_dist[100:], smol_kernel)
     for j in range(142):
@@ -219,8 +219,7 @@ def createKeyboardVisualization(waveform, frequency_dist, prev_values, norm_fact
             value = np.abs(frequency_dist[j] * intensity * norm_factor)
             fall_add_factor = 0.85
             temp_factor = 0.6
-        fall_add_factor = 0.3
-        rise_sub_factor = 0.01 #temp_factor
+        rise_sub_factor = temp_factor
         
         if value < prev_values[j]:
             value = value + (prev_values[j] - value)*fall_add_factor
