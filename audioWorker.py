@@ -33,11 +33,11 @@ class audioWorkerino:
         #waveform_right = waveform[:,1]
         #calculate normalized frequency distribution
         frequency_dist_left = self.fft_processor.fftWorker(waveform_left)
-        frequency_dist_right = self.fft_processor.fftWorker(waveform_right)
+        #frequency_dist_right = self.fft_processor.fftWorker(waveform_right)
         #visualize
         visualization_left = self.visual_processor.visualize(waveform_left, frequency_dist_left)
-        visualization_right = self.visual_processor.visualize(waveform_right, frequency_dist_right)
-
+        #visualization_right = self.visual_processor.visualize(waveform_right, frequency_dist_right)
+        visualization_right = visualization_left
         #display performance
         time_end = tm.perf_counter()
         print("audioWorker time: " + str(time_end - time_begin))

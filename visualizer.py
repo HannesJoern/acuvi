@@ -24,8 +24,8 @@ class Visualizer():
         self.prev_frequency_dist = np.array([0 for i in range(142)])
         self.frequency_dist = np.array([0 for i in range(142)])
         self.intensity_fac = 100
-        self.norm_factor = 1 #normalization factor
-        self.rise_fac = 0.4
+        self.norm_factor = 10 #normalization factor
+        self.rise_fac = 0.99
         self.fall_fac = 0.9
         self.exponent = 2
         self.lower_part = 1

@@ -8,14 +8,14 @@ from sharedFunctions import *
 import audioIn
 import audioWorker
 
-mode = 1 # 1 = rgb display, 0 = LEDs
+mode = 0 # 1 = rgb display, 0 = LEDs
 
 #basic settings (program might still break when changing these)
 RATE=44100
 RATE_INTENSITY = 60
 RATE_FREQUENCY = 60
 
-NUM_PIXELS = 143
+NUM_PIXELS = 141
 empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
 
@@ -42,9 +42,10 @@ def main():
         #imports need to be here because of bug in libusb device access
         #initialization of LEDs via USB SPI chip
         import board
-        import neopixel
+        import neopixel_spi as neopixel
         PIXEL_ORDER = neopixel.GRB
-        pixels = neopixel.NeoPixel(board.D18, NUM_PIXELS, brightness = 0.1, pixel_order=PIXEL_ORDER, auto_write=False)
+        spi = board.SPI()
+        pixels = neopixel.NeoPixel_SPI(spi, 16, brightness = 1, pixel_order=PIXEL_ORDER, auto_write=False)
 
     else:
         import rgbDisplay
@@ -72,9 +73,32 @@ def main():
                     if (visualization_right[i][k] - visualization_left[i][k]) > 0:
                         visualization_right[i][k] = 2 * (visualization_right[i][k] - visualization_left[i][k])"""
             if mode == 0:
+                smol_visualization = np.zeros((48, 3), dtype=float)
+                for i in range(5):
+                    for j in range(11):
+                        for k in range(3):
+                            smol_visualization[j][k] += float(visualization_left[3*12 + i*12 + j][k])/2
+                for i in range(5):
+                    for j in range(11):
+                        for k in range(3):
+                             pass
+                            #smol_visualization[12 + j][k] += float(visualization_right[3*12 + i*12 + j][k])/2
+
+
+                for i in range(3):
+                    for j in range(11):
+                        for k in range(3):
+                            pass
+                            #smol_visualization[12 + j][k] += float(visualization_left[i*12 + j][k])
+                for i in range(4):
+                    for j in range(11):
+                        for k in range(3):
+                            pass
+                            #smol_visualization[12 + round(0.5*j)][k] += float(visualization_left[8*12 + i + j*4][k])
                 #write vis_sample to LEDs
-                for i in range(NUM_PIXELS):
-                    hex_val = rgb_to_hex(visualization_left[i][0], visualization_left[i][1], visualization_left[i][2])
+                visualization = smol_visualization
+                for i in range(16):
+                    hex_val = rgb_to_hex(visualization[i][0], visualization[i][1], visualization[i][2])
                     pixels[i] = int(hex_val, 16)
                 
                 pixels.show()
