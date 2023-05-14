@@ -18,29 +18,22 @@ class audioWorkerino:
         self.NUM_PIXELS = NUM_PIXELS
 
 
-    def audioWorker(self, byte_data):
+    def audioWorker(self, waveform):
         print("audioWorker started!")
         #performance counter to see how fast our entire data processing is
         time_begin = tm.perf_counter()
         
-        np_data = np.frombuffer(byte_data, dtype=np.int16)
         CHUNKSIZE = int(self.RATE/self.RATE_INTENSITY) #????? this might be wrong
-        ##waveform_mono = np_data
-        waveform_left = np_data
-        waveform_right = np_data
-        #waveform = np.reshape(np_data, (CHUNKSIZE, 2))
-        #waveform_left = waveform[:,0]
-        #waveform_right = waveform[:,1]
+
         #calculate normalized frequency distribution
-        frequency_dist_left = self.fft_processor.fftWorker(waveform_left)
+        frequency_dist = self.fft_processor.fftWorker(waveform)
         #frequency_dist_right = self.fft_processor.fftWorker(waveform_right)
         #visualize
-        visualization_left = self.visual_processor.visualize(waveform_left, frequency_dist_left)
+        visualization = self.visual_processor.visualize(waveform, frequency_dist)
         #visualization_right = self.visual_processor.visualize(waveform_right, frequency_dist_right)
-        visualization_right = visualization_left
         #display performance
         time_end = tm.perf_counter()
         print("audioWorker time: " + str(time_end - time_begin))
-        return visualization_left, visualization_right
+        return visualization
 
     

@@ -12,13 +12,13 @@ mode = 0 # 1 = rgb display, 0 = LEDs
 
 #basic settings (program might still break when changing these)
 RATE=44100
-RATE_INTENSITY = 60
-RATE_FREQUENCY = 60
-
-NUM_PIXELS = 141
+RATE_INTENSITY = 196
+RATE_FREQUENCY = 196
+CHUNKSIZE = RATE/RATE_INTENSITY
+NUM_PIXELS = 200
 empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
-
+arraysize = 20
 
 def main():
     #necessary to prevent multiprocessing from taking over:
@@ -26,12 +26,13 @@ def main():
 
     #these queues are necessary to send and receive data across processes (they are special multiprocessing queues)
     audio_in_queue = Queue()
-
+    audio_out_queue = Queue()
     #start visualization process
     audio_processor = audioWorker.audioWorkerino(RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS)
+    fast_audio_processor = audioWorker.audioWorkerino(RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS)
 
     #initialize audio IO
-    audio_in = audioIn.AudioIn(RATE, RATE_INTENSITY, audio_in_queue)
+    audio_in = audioIn.AudioIn(RATE, RATE_INTENSITY, audio_in_queue, audio_out_queue)
     #start IO process (it will create input and output audio streams)
     audio_in_worker = Process(target=audio_in.audioInWorker, args=())
     audio_in_worker.start()
@@ -55,16 +56,40 @@ def main():
     #start the visualization loop
     visualization_left = np.array([[0 for i in range(3)] for i in range(NUM_PIXELS)])
     visualization_right = np.array([[0 for i in range(3)] for i in range(NUM_PIXELS)])
+
+    last_audiosamples = np.zeros((int(CHUNKSIZE * arraysize),))
+    print(last_audiosamples)
+    rotary_idx = 0
+    list_init = False
+
     while True: 
         try:
             #get visual data from processing queue
             while audio_in_queue.empty():
-                tm.sleep(0.005)
-            while not audio_in_queue.empty():
-                byte_data = audio_in_queue.get()
-
-            visualization_left, visualization_right = audio_processor.audioWorker(byte_data)
+                tm.sleep(0.0005)
             
+            while list_init == False:
+                while audio_in_queue.empty():
+                    tm.sleep(0.0005)
+                byte_data = audio_in_queue.get()
+                np_data = np.frombuffer(byte_data, dtype=np.int16)
+                last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
+                last_audiosamples[int((arraysize - 1) * CHUNKSIZE) : ] = np_data
+                rotary_idx += 1
+                if rotary_idx == (arraysize - 1):
+                    list_init = True
+            counter = 0
+            while not audio_in_queue.empty():
+                counter += 1
+                byte_data = audio_in_queue.get()
+                np_data = np.frombuffer(byte_data, dtype=np.int16)
+                last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
+                last_audiosamples[int((arraysize - 1) * CHUNKSIZE) : ] = np_data
+                if counter > 1:
+                    print("overrun!!")
+
+            visualization  = audio_processor.audioWorker(last_audiosamples)
+            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 5) * CHUNKSIZE) : ])
             """for i in range(len(visualization_left)):
                 for k in range(3):
                     mean = (visualization_left[i][k] + visualization_right[i][k])/2
@@ -73,34 +98,61 @@ def main():
                     if (visualization_right[i][k] - visualization_left[i][k]) > 0:
                         visualization_right[i][k] = 2 * (visualization_right[i][k] - visualization_left[i][k])"""
             if mode == 0:
+                time_begin = tm.perf_counter()
                 smol_visualization = np.zeros((48, 3), dtype=float)
-                for i in range(5):
-                    for j in range(11):
+                lightmode = "background"
+                if lightmode == "background":
+                    for i in range(3):
+                        for j in range(11):
+                            for k in range(3):
+                                smol_visualization[1 + j][k] += float(visualization[3*12 + j + i*12][k])
+
+                    #TODO: BASS
+                    #for i in range(2):
+                    #    for j in range(12):
+                    #        for k in range(3):
+                    #            smol_visualization[i][k] += float(visualization[i*12 + j][k])
+                    
+                    for j in range(13):
                         for k in range(3):
-                            smol_visualization[j][k] += float(visualization_left[3*12 + i*12 + j][k])/2
-                for i in range(5):
-                    for j in range(11):
+                            smol_visualization[13] += float(fast_visualization[100 + j][k])/10
+                    for j in range(13):
                         for k in range(3):
-                             pass
-                            #smol_visualization[12 + j][k] += float(visualization_right[3*12 + i*12 + j][k])/2
+                            smol_visualization[14] += float(fast_visualization[113 + j][k])/10
+                    for j in range(13):
+                        for k in range(3):
+                            smol_visualization[15] += float(fast_visualization[126 + j][k])/10
+
+                if lightmode == "concert":
+                    for i in range(14):
+                        for j in range(10):
+                            for k in range(3):
+                                smol_visualization[i][k] += float(visualization[10 * i + j][k])/2
+                else: 
+                    for i in range(5):
+                        for j in range(11):
+                            for k in range(3):
+                                pass
+                                #smol_visualization[12 + j][k] += float(visualization_right[3*12 + i*12 + j][k])/2
 
 
-                for i in range(3):
-                    for j in range(11):
-                        for k in range(3):
-                            pass
-                            #smol_visualization[12 + j][k] += float(visualization_left[i*12 + j][k])
-                for i in range(4):
-                    for j in range(11):
-                        for k in range(3):
-                            pass
-                            #smol_visualization[12 + round(0.5*j)][k] += float(visualization_left[8*12 + i + j*4][k])
-                #write vis_sample to LEDs
+                    for i in range(3):
+                        for j in range(11):
+                            for k in range(3):
+                                pass
+                                #smol_visualization[12 + j][k] += float(visualization_left[i*12 + j][k])
+                    for i in range(4):
+                        for j in range(11):
+                            for k in range(3):
+                                pass
+                                #smol_visualization[12 + round(0.5*j)][k] += float(visualization_left[8*12 + i + j*4][k])
+                    #write vis_sample to LEDs
                 visualization = smol_visualization
                 for i in range(16):
                     hex_val = rgb_to_hex(visualization[i][0], visualization[i][1], visualization[i][2])
                     pixels[i] = int(hex_val, 16)
-                
+                time_end = tm.perf_counter()
+                print("main loops time: " + str(time_end - time_begin))
                 pixels.show()
             else:
                 #hex_display_vals = np.array([empty_color_val_display for h in range(300)])

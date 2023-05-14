@@ -10,24 +10,25 @@ class fftWorkerino:
         self.RATE = RATE
         self.RATE_FREQUENCY = RATE_FREQUENCY
         self.NUM_PIXELS = NUM_PIXELS
-        self.prev_bass_sums = []
+
         max_key = math.floor(freq_to_piano_key(self.RATE/2))
-        if max_key >= 142:
-            print("max key is greater eq 120. it's: " + str(max_key))
-            print("fftWorker initialized")
+        if max_key < NUM_PIXELS:
+            print("num pixels is bigger than max key")
+        print("fftWorker initialized")
 
     def fftWorker(self, audiosample):
-        frequency_dist = np.array([0 for j in range(142)], dtype=float) # wir gehen davon aus, dass max_key < 120
+        frequency_dist = np.array([0 for j in range(self.NUM_PIXELS)], dtype=float) # wir gehen davon aus, dass max_key < 120
         time_begin = tm.perf_counter()
         fft_data = scipy.fftpack.rfft(audiosample)
-        frequency_dist, self.prev_bass_sums = map_fft_to_freq_dist(self.RATE, audiosample, frequency_dist, fft_data, self.prev_bass_sums)
+        frequency_dist = map_fft_to_freq_dist(self.RATE, audiosample, frequency_dist, fft_data)
         time_end = tm.perf_counter()
         print("fftWorker time: " + str(time_end - time_begin))
         return frequency_dist
 
 @numba.jit(nopython=True)
 def freq_to_piano_key(freq):
-    key = 12 * np.log2(freq/440) + 49
+    #key = 12 * np.log2(freq/440) + 49
+    key = 12 * np.log2((freq - 120)/440)
     if key < 0:
         key = 0
         print("key was smaller than 0, that really shouldnt happpen /: 'twas: " + str(key))
@@ -37,41 +38,26 @@ def freq_to_piano_key(freq):
 def piano_key_to_freq(key):
     #if key < 50:
     #    return key * 10
-    freq = 440 * np.power(2, (key-49)/12)
+    #freq = 440 * np.power(2, (key-49)/12)
+    freq = 440 * np.power(2, (key-49)/12) + 120
     return freq
 
 
-#@numba.jit(nopython=True)
-def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, prev_bass_sums):
+@numba.jit(nopython=True)
+def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data):
     step = RATE/len(audiosample)
     
     for j in range(frequency_dist.size):
 
         freq = piano_key_to_freq(j)
         next_freq = piano_key_to_freq(j + 1)
-        chunk = fft_data[int(freq/step):int(next_freq/step)]
-        if j < 55:
-            chunk = 0.85*chunk
-        if j >=55 and j <= 58:
-            chunk = 0.9*chunk
-        if j >=58 and j <= 62:
-            chunk = 0.95*chunk 
+        chunk = fft_data[int(freq/step):int(next_freq/step)] 
         value = 0
         if np.any(chunk):
             chunk = np.abs(chunk)
             value = np.sum(chunk)
 
-        if j > 10:
-            frequency_dist[j] = value
-        else:
-            frequency_dist[j] = 0
-
-    bass_sum = np.max(frequency_dist[0:40])
-    if len(prev_bass_sums) < 5000:
-        prev_bass_sums.append(bass_sum)
-    else:
-        prev_bass_sums.pop(0)
-        prev_bass_sums.append(bass_sum)
+        frequency_dist[j] = value
 
 
     #normalization to 0...1
@@ -79,18 +65,18 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, prev_bass_
     stop = frequency_dist.size
     frequency_dist[start:stop] = normalize(frequency_dist[start:stop])
 
-#    if bass_sum > 2*np.mean(prev_bass_sums):
-#        frequency_dist[0:20] += np.mean(frequency_dist[0:40]) + 0.5
-#        print("got triggered")
+
         
-    return frequency_dist, prev_bass_sums
+    return frequency_dist
 
 @numba.jit(nopython=True)
 def normalize(frequency_dist):
-    if np.any(frequency_dist):
-        max_value = np.max(frequency_dist)
-        if(max_value < 50000):
-            max_value = 50000
+    if np.any(frequency_dist[60:90]):
+        max_value = np.max(frequency_dist[60:90])
+        if(max_value < 40000):
+            max_value = 40000
+        else:
+            print("max val higher than threshold!")
         if max_value != 0:
-            frequency_dist = frequency_dist*1/max_value
+            frequency_dist = frequency_dist*1/400000
     return frequency_dist
