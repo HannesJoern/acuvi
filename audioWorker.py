@@ -19,7 +19,7 @@ class audioWorkerino:
 
 
     def audioWorker(self, waveform):
-        print("audioWorker started!")
+        #print("audioWorker started!")
         #performance counter to see how fast our entire data processing is
         time_begin = tm.perf_counter()
         
@@ -33,7 +33,7 @@ class audioWorkerino:
         #visualization_right = self.visual_processor.visualize(waveform_right, frequency_dist_right)
         #display performance
         time_end = tm.perf_counter()
-        print("audioWorker time: " + str(time_end - time_begin))
+        #print("audioWorker time: " + str(time_end - time_begin))
         return visualization
 
     
