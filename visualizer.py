@@ -127,107 +127,27 @@ def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_vi
         intensity = 400
         fall_add_factor = fall_fac
         rise_sub_factor = rise_fac
-        if j < 20:
-            rise_sub_factor = rise_fac * 0.9
-            fall_add_factor = fall_fac * 0.9
-            redfac = 1 * np.power(j / 40, 2)
-            greenfac = 1 * np.power((20 - j)/20, 2)
-            bluefac = 1
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
+        value = np.abs(frequency_dist[j] * norm_factor) * intensity
 
-
-        if j >= 20 and j < 40:
-            rise_sub_factor = rise_fac * 0.9
-            fall_add_factor = fall_fac * 0.9
-            redfac = 1 * np.power(j / 40, 2) * 1.2
-            greenfac = 1 * np.power(j / 80, 2)
-            bluefac = 1
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
-
-        if j>=40 and j<60:
-            redfac = 1 * 1.5
-            greenfac = 1 * np.power(j/80, 2)
-            #bluefac = 1 * np.power((80 - j)/60, 2)
-            bluefac = 0
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
-
-
-        if j>=60 and j<80:
-            redfac = 1 * np.power((80 - j)/20, 2) * 1.2
-            greenfac = 1 * np.power(j/80, 2)
-            #bluefac = 1 * np.power((80 - j)/40, 2)
-            bluefac = 0
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
-
-
-        if j>=80 and j<90:
-            redfac = 0.9 * np.power((j - 80)/10, 2)
-            greenfac = 0.8
-            bluefac = 0.8 * np.power((j - 80)/10, 3)
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
-
-        if j>=100:
-            redfac = 1
-            greenfac = 1
-            bluefac = 1
-            value = np.abs(frequency_dist[j] * norm_factor) * intensity
-            rise_sub_factor = rise_fac * 0.9
-            fall_add_factor = fall_fac * 0.9
-
-        if j < 36:
-            bluefac = 1
-            greenfac = 0.5*np.power((36-j)/24, 2)
-            redfac = 0.5*np.power(j/36, 2)
-
-        if j >= 36 and j < 48:
-            bluefac = np.power((48 - j)/24, 2)
-            redfac = np.power((j - 36)/24, 2)
-            greenfac = 0
-            value = value * np.power((j - 36)/12, 2)
-        
-
-        """if j >= 48 and j < 60:
-            bluefac = np.power((48 - j)/24, 2)
-            redfac = np.power((j - 36)/24, 2)
-            greenfac = 0
-        if j >= 60 and j < 72:
-            bluefac = 0
-            redfac = np.power((72 - j)/12, 2)
-            greenfac = np.power((j - 60)/12, 2)
-
-        if j >= 72 and j < 84:
-            bluefac = np.power((j - 72)/12, 2)
+        if j < 40:
             redfac = 0
-            greenfac = 1
-            value = value * np.power((84-j)/12, 2)"""
-        if j >= 48 and j < 60:
-            if j >= 48 and j < 54:
-                bluefac = 0
-                redfac = np.power((j - 48)/6, 2)
-                greenfac = np.power((54 - j)/6, 2)
-            if j >= 54 and j < 60:
-                bluefac = 0
-                redfac = np.power((60 - j)/6, 2)
-                greenfac = np.power((j - 54)/6, 2)
-        if j >= 60 and j < 72:
-            if j >= 60 and j < 66:
-                bluefac = 0
-                redfac = np.power((j - 60)/6, 2)
-                greenfac = np.power((66 - j)/6, 2)
-            if j >= 66 and j < 72:
-                bluefac = 0
-                redfac = np.power((72 - j)/6, 2)
-                greenfac = np.power((j - 66)/6, 2)
-        if j >= 72 and j < 84:
-            if j >= 72 and j < 78:
-                bluefac = 0
-                redfac = np.power((j - 72)/6, 2)
-                greenfac = np.power((78 - j)/6, 2)
-            if j >= 78 and j < 84:
-                bluefac = 0
-                redfac = np.power((84 - j)/6, 2)
-                greenfac = np.power((j - 87)/6, 2)
-        if j > 84:
+            greenfac = 0
+            bluefac = 1
+        if j >= 40 and j < 60:
+            redfac = np.power(float(j - 40)/20, 1)
+            greenfac = 0
+            bluefac = np.power(float(60 - j)/20, 1)
+        if j >= 60 and j <= 80:
+            redfac = np.power(float(80 - j)/20, 1)
+            greenfac = np.power(float(j - 60)/20, 1)
+            bluefac = 0
+        if j >= 80 and j <= 100:
+            redfac = 0
+            greenfac = np.power(float(100 - j)/20, 1)
+            bluefac = np.power(float(j - 80)/20, 1)
+
+        # highs
+        if j>100:
             bluefac = 1
             redfac = 1
             greenfac = 1

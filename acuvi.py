@@ -13,36 +13,42 @@ mode = 0 # 1 = rgb display, 0 = LEDs
 
 #basic settings (program might still break when changing these)
 RATE=44100
-RATE_INTENSITY = 196
-RATE_FREQUENCY = 196
+RATE_INTENSITY = 147
+RATE_FREQUENCY = 147
 CHUNKSIZE = RATE/RATE_INTENSITY
 NUM_PIXELS = 200
 empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
-arraysize = 20
+arraysize = 50
 @numba.jit(nopython=True)
 def transformVis(smol_visualization, fast_visualization, visualization):
-    for i in range(5):
-        for j in range(16):
-            for k in range(3):
-                for l in range(12):
-                    smol_visualization[54 + j][k] += float(fast_visualization[7*12 + i*12 + l][k])/20
-    # second interval: 30-42
-    for i in range(3):
-        for j in range(22):
-            for k in range(3):
-                for l in range(12):
-                    smol_visualization[31 +  j][k] += float(visualization[4*12 + i*12 + l][k])/5
+    # highs / inner ring
+    for j in range(16):
+        for k in range(3):
+            for l in range(50):
+                if l >= 20:
+                    smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])*float(l)/20
+                else:
+                    smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])
+    # middle: 30-42
+    for j in range(22):
+        for k in range(3):
+            for l in range(70):
+                if l < 10:
+                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])*float(l - 10)/10
+                elif l >= 20 and l < 50:
+                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])
+                elif l > 50:
+                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])*float(70 - l)/10
 
-    # third interval: 1 - 27
-    for i in range(3):
-        for j in range(27):
-            for k in range(3):
-                for l in range(12):
-                    if i < 3:
-                        smol_visualization[1 + j][k] += float(visualization[i*12 + l][k])/15
-                    else:
-                        smol_visualization[1 + j][k] += float(visualization[i*12 + l][k])/10
+    # outer ring: 1 - 27
+    for j in range(27):
+        for k in range(3):
+            for l in range(60):
+                if l < 40:
+                    smol_visualization[1 + j][k] += (1/10)*float(visualization[l][k])
+                else:
+                    smol_visualization[1 + j][k] += (1/10)*float(visualization[l][k])*float(60 - l)/20
 
     return smol_visualization
 
@@ -114,8 +120,8 @@ def main():
                 if counter > 1:
                     print("overrun!!")
 
-            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
-            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 4) * CHUNKSIZE) : ])
+            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 50) * CHUNKSIZE) : ])
+            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
             """for i in range(len(visualization_left)):
                 for k in range(3):
                     mean = (visualization_left[i][k] + visualization_right[i][k])/2

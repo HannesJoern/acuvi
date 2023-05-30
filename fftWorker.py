@@ -57,7 +57,6 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_his
         if np.any(chunk):
             chunk = np.abs(chunk)
             value = np.sum(chunk)
-
         frequency_dist[j] = value
 
 
