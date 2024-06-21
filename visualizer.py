@@ -5,7 +5,6 @@ import time as tm
 import scipy.ndimage
 import scipy.signal
 import csv
-
 class Visualizer():
     def __init__(self, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS):
         #current params
