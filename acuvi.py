@@ -114,15 +114,17 @@ def main():
             while not audio_in_queue.empty():
                 counter += 1
                 byte_data = audio_in_queue.get()
-                np_data = np.frombuffer(byte_data, dtype=np.int16)
-                print("AUDIO DATA: ")
-                print(np_data)
-                print("MEAN:")
-                print(np.mean(np_data))
-                last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
-                last_audiosamples[int((arraysize - 1) * CHUNKSIZE) : ] = np_data
                 if counter > 1:
                     print("overrun!!")
+
+            np_data = np.frombuffer(byte_data, dtype=np.int16)
+            print("AUDIO DATA: ")
+            print(np_data)
+            print("MEAN:")
+            print(np.mean(np_data))
+            last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
+            last_audiosamples[int((arraysize - 1) * CHUNKSIZE) : ] = np_data
+
 
             visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 50) * CHUNKSIZE) : ])
             fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
@@ -199,7 +201,7 @@ def main():
                     hex_val = rgb_to_hex(visualization[i][0], visualization[i][1], visualization[i][2])
                     pixels[i] = int(hex_val, 16)
                 time_end = tm.perf_counter()
-                #print("main loops time: " + str(time_end - time_begin))
+                print("main loops time: " + str(time_end - time_begin))
                 print("before calling pixels.show()")
                 pixels.show()
             else:
