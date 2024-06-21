@@ -6,7 +6,6 @@ import numpy as np
 import math
 from sharedFunctions import *
 import audioIn
-import numba
 import audioWorker
 
 mode = 0 # 1 = rgb display, 0 = LEDs
