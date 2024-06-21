@@ -127,7 +127,8 @@ def main():
 
 
             visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 50) * CHUNKSIZE) : ])
-            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
+            fast_visualization = visualization
+            #fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
             """for i in range(len(visualization_left)):
                 for k in range(3):
                     mean = (visualization_left[i][k] + visualization_right[i][k])/2
