@@ -115,6 +115,10 @@ def main():
                 counter += 1
                 byte_data = audio_in_queue.get()
                 np_data = np.frombuffer(byte_data, dtype=np.int16)
+                print("AUDIO DATA: ")
+                print(np_data)
+                print("MEAN:")
+                print(np.mean(np_data))
                 last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
                 last_audiosamples[int((arraysize - 1) * CHUNKSIZE) : ] = np_data
                 if counter > 1:
@@ -196,6 +200,7 @@ def main():
                     pixels[i] = int(hex_val, 16)
                 time_end = tm.perf_counter()
                 #print("main loops time: " + str(time_end - time_begin))
+                print("before calling pixels.show()")
                 pixels.show()
             else:
                 #hex_display_vals = np.array([empty_color_val_display for h in range(300)])
