@@ -7,6 +7,7 @@ class AudioIn:
         self.audio_in_queue = audio_in_queue
         self.CHUNKSIZE = RATE/RATE_INTENSITY
         self.audio_out_queue = audio_out_queue
+        self.counter = 0
 
 
     def audioInWorker(self):
@@ -26,9 +27,12 @@ class AudioIn:
 
     # function called by pyaudio stream whenever it gets new data
     def callbackIn(self, in_data, frame_count, time_info, status):
-        if self.audio_in_queue.empty():
-            self.audio_in_queue.put((in_data))
+        if self.counter >= 2:
+            if not self.audio_in_queue.empty():
+                x = self.audio_in_queue.get()
         else:
-            trash = self.audio_in_queue.get()
-            self.audio_in_queue.put((in_data))
+            self.counter += 1
+        self.audio_in_queue.put((in_data))
+
+
         return (in_data, pyaudio.paContinue)
