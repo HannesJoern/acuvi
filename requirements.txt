@@ -1,0 +1,6 @@
+numba -> Raspberry py 1 and zero fail here ):
+multiprocess
+pyaudio
+scipy
+PIL (only for RGB display)
+dash, flask, csv for server

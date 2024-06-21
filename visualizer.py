@@ -1,6 +1,5 @@
 import numpy as np
 from sharedFunctions import *
-import numba
 import time as tm
 #import matplotlib.pyplot as plt
 import scipy.ndimage
@@ -102,7 +101,7 @@ class Visualizer():
         keyboard_visualization, prev_values = applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_visualization, rise_fac, fall_fac, self.NUM_PIXELS)
         return prev_values, keyboard_visualization
 
-@numba.jit(nopython=True)
+
 def applyExponentAndUpperLower(frequency_dist, exponent, upper_part, lower_part):
     for j in range(len(frequency_dist) - 1):
         if j < 36:
@@ -112,7 +111,7 @@ def applyExponentAndUpperLower(frequency_dist, exponent, upper_part, lower_part)
         frequency_dist[j] = frequency_dist[j]**exponent
     return frequency_dist
 
-@numba.jit(nopython=True)
+
 def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_visualization, rise_fac, fall_fac, no_pixels):
     redfac = 1
     greenfac = 1

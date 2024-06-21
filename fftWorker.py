@@ -26,7 +26,7 @@ class fftWorkerino:
         #print("fftWorker time: " + str(time_end - time_begin))
         return frequency_dist
 
-@numba.jit(nopython=True)
+
 def freq_to_piano_key(freq):
     #key = 12 * np.log2(freq/440) + 49
     key = 12 * np.log2((freq - 120)/440)
@@ -35,7 +35,7 @@ def freq_to_piano_key(freq):
         print("key was smaller than 0, that really shouldnt happpen /: 'twas: " + str(key))
     return round(key)
 
-@numba.jit(nopython=True)
+
 def piano_key_to_freq(key):
     #if key < 50:
     #    return key * 10
@@ -44,7 +44,7 @@ def piano_key_to_freq(key):
     return freq
 
 
-@numba.jit(nopython=True)
+
 def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_history, volume_history_pos):
     step = RATE/len(audiosample)
     
@@ -69,7 +69,7 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_his
         
     return frequency_dist, volume_history, volume_history_pos
 
-@numba.jit(nopython=True)
+
 def normalize(frequency_dist, volume_history, volume_history_pos):
     if np.any(frequency_dist):
         max_value = np.max(frequency_dist)

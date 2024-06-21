@@ -20,7 +20,7 @@ NUM_PIXELS = 200
 empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
 arraysize = 50
-@numba.jit(nopython=True)
+
 def transformVis(smol_visualization, fast_visualization, visualization):
     # highs / inner ring
     for j in range(16):
