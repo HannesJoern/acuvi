@@ -22,9 +22,9 @@ class Visualizer():
         self.prev_frequency_dist = np.array([0 for i in range(self.NUM_PIXELS)])
         self.frequency_dist = np.array([0 for i in range(self.NUM_PIXELS)])
         self.norm_factor = 0.01 #normalization factor
-        self.rise_fac = 0.9
-        self.fall_fac = 0.9
-        self.exponent = 1
+        self.rise_fac = 0# 0.9
+        self.fall_fac = 0#0.9
+        self.exponent = 2
         self.lower_part = 1
         self.upper_part = 1
         self.kernel = [ 
@@ -53,7 +53,7 @@ class Visualizer():
             with open('/home/hannes/Desktop/acuvi-repo/acuvi/data.csv', 'r', newline='') as f:
                 rd = csv.reader(f, delimiter = ',')
                 for row in rd:
-                    self.norm_factor = float(row[0])
+                    self.norm_factor = 0#float(row[0])
                     self.rise_fac = float(row[1])
                     self.fall_fac = float(row[2])
                     self.exponent = float(row[3])
@@ -130,7 +130,7 @@ def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_vi
         if j < 40:
             redfac = 0
             greenfac = 0
-            bluefac = 1
+            bluefac = 0#1
         if j >= 40 and j < 60:
             redfac = np.power(float(j - 40)/20, 1)
             greenfac = 0
@@ -146,9 +146,9 @@ def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_vi
 
         # highs
         if j>100:
-            bluefac = 1
-            redfac = 1
-            greenfac = 1
+            bluefac = 0#1
+            redfac = 0#1
+            greenfac = 0#1
     
         if value < prev_values[j]:
             value = value + (prev_values[j] - value)*fall_add_factor
