@@ -74,10 +74,11 @@ def main():
         #imports need to be here because of bug in libusb device access
         #initialization of LEDs via USB SPI chip
         import board
-        import neopixel_spi as neopixel
+        import neopixel
+        LED_PIN = board.D18
+        LED_COUNT = 71
         PIXEL_ORDER = neopixel.GRB
-        spi = board.SPI()
-        pixels = neopixel.NeoPixel_SPI(spi, 71, brightness = 1, pixel_order=PIXEL_ORDER, auto_write=False)
+        pixels = neopixel.NeoPixel(LED_PIN, LED_COUNT, brightness = 1, pixel_order=PIXEL_ORDER, auto_write=False)
 
     else:
         import rgbDisplay
