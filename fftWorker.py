@@ -2,7 +2,6 @@ import scipy.fftpack
 import numpy as np
 from sharedFunctions import *
 import math
-import numba
 import time as tm
 
 class fftWorkerino:
