@@ -56,7 +56,7 @@ def main():
     multiprocess.freeze_support()
 
     #these queues are necessary to send and receive data across processes (they are special multiprocessing queues)
-    audio_in_queue = Queue()
+    audio_in_queue = Queue(max_size = 3)
     audio_out_queue = Queue()
     #start visualization process
     audio_processor = audioWorker.audioWorkerino(RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS)
