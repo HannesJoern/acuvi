@@ -28,4 +28,5 @@ class AudioIn:
     # function called by pyaudio stream whenever it gets new data
     def callbackIn(self, in_data, frame_count, time_info, status):
         self.audio_in_queue.put((in_data))
+        tm.sleep(0.5)
         return (in_data, pyaudio.paContinue)
