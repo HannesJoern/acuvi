@@ -102,7 +102,7 @@ def main():
             
             while list_init == False:
                 while audio_in_queue.empty():
-                    tm.sleep(0.0005)
+                    tm.sleep(0.0000005)
                 byte_data = audio_in_queue.get()
                 np_data = np.frombuffer(byte_data, dtype=np.int16)
                 last_audiosamples[ : int((arraysize - 1) * CHUNKSIZE)] = last_audiosamples[int(CHUNKSIZE) : ]
