@@ -98,7 +98,7 @@ def main():
         try:
             #get visual data from processing queue
             while audio_in_queue.empty():
-                tm.sleep(0.0005)
+                tm.sleep(0.000005)
             
             while list_init == False:
                 while audio_in_queue.empty():
