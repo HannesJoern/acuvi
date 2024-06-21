@@ -26,7 +26,7 @@ class AudioIn:
 
     # function called by pyaudio stream whenever it gets new data
     def callbackIn(self, in_data, frame_count, time_info, status):
-        if self.audio_in_queueo.empty():
+        if self.audio_in_queue.empty():
             self.audio_in_queue.put((in_data))
         else:
             trash = self.audio_in_queue.get()
