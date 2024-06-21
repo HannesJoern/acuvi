@@ -13,7 +13,7 @@ class AudioIn:
         # pyaudio automatically chooses default devices and creates stream in callback mode
         pIn = pyaudio.PyAudio()
         pOut = pyaudio.PyAudio()
-        streamIn = pIn.open(format=pyaudio.paInt16, channels=1, rate=self.RATE, input=True, stream_callback=self.callbackIn, frames_per_buffer=int(self.CHUNKSIZE), input_device_index = 1)
+        streamIn = pIn.open(format=pyaudio.paInt16, channels=1, rate=self.RATE, input=True, stream_callback=self.callbackIn, frames_per_buffer=int(self.CHUNKSIZE), input_device_index = 2)
         #start recording audio
         streamIn.start_stream()
         while(True):
