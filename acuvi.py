@@ -24,7 +24,7 @@ arraysize = 100
 # for background visualization
 def transformVis(smol_visualization, fast_visualization, visualization):
     # highs / inner ring
-    for j in range(16):
+    """for j in range(16):
         for k in range(3):
             for l in range(50):
                 smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])
@@ -32,8 +32,15 @@ def transformVis(smol_visualization, fast_visualization, visualization):
     for j in range(42):
         for k in range(3):
             for l in range(80):
+                smol_visualization[j][k] += (1/2)*float(visualization[l][k])"""
+    for j in range(70):
+        for k in range(3):
+            for l in range(50):
+                smol_visualization[j][k] += (1/20)*float(fast_visualization[80 + l][k])
+    for j in range(70):
+        for k in range(3):
+            for l in range(80):
                 smol_visualization[j][k] += (1/2)*float(visualization[l][k])
-
     """# outer ring: 1 - 27
     for j in range(27):
         for k in range(3):
