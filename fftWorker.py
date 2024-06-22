@@ -12,6 +12,8 @@ class fftWorkerino:
         self.NUM_PIXELS = NUM_PIXELS
         self.volume_history = np.zeros((2000,), dtype=np.float64)
         self.volume_history_pos = 0
+        self.volume_history_highs = np.zeros((2000,), dtype=np.float64)
+        self.volume_history_highs_pos = 0
         max_key = math.floor(freq_to_piano_key(self.RATE/2))
         if max_key < NUM_PIXELS:
             print("num pixels is bigger than max key")
@@ -21,7 +23,7 @@ class fftWorkerino:
         frequency_dist = np.array([0 for j in range(self.NUM_PIXELS)], dtype=float) # wir gehen davon aus, dass max_key < 120
         time_begin = tm.perf_counter()
         fft_data = scipy.fftpack.rfft(audiosample)
-        frequency_dist, self.volume_history, self.volume_history_pos = map_fft_to_freq_dist(self.RATE, audiosample, frequency_dist, fft_data, self.volume_history, self.volume_history_pos)
+        frequency_dist, self.volume_history, self.volume_history_pos, self.volume_history_highs, self.volume_history_highs_pos = map_fft_to_freq_dist(self.RATE, audiosample, frequency_dist, fft_data, self.volume_history, self.volume_history_pos, self.volume_history_highs, self.volume_history_highs_pos)
         time_end = tm.perf_counter()
         #print("fftWorker time: " + str(time_end - time_begin))
         return frequency_dist
@@ -45,7 +47,7 @@ def piano_key_to_freq(key):
 
 
 @numba.jit(nopython=True)
-def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_history, volume_history_pos):
+def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_history, volume_history_pos, volume_history_highs, volume_history_highs_pos):
     step = RATE/len(audiosample)
     
     for j in range(frequency_dist.size):
@@ -63,11 +65,12 @@ def map_fft_to_freq_dist(RATE, audiosample, frequency_dist, fft_data, volume_his
     #normalization to 0...1
     start = 0
     stop = frequency_dist.size
-    frequency_dist[start:stop], volume_history, volume_history_pos = normalize(frequency_dist[start:stop], volume_history, volume_history_pos)
+    frequency_dist[start:80], volume_history, volume_history_pos = normalize(frequency_dist[start:80], volume_history, volume_history_pos)
+    frequency_dist[80:stop], volume_history_highs, volume_history_highs_pos = normalize(frequency_dist[80:stop], volume_history_highs, volume_history_highs_pos)
 
 
         
-    return frequency_dist, volume_history, volume_history_pos
+    return frequency_dist, volume_history, volume_history_pos, volume_history_highs, volume_history_highs_pos
 
 @numba.jit(nopython=True)
 def normalize(frequency_dist, volume_history, volume_history_pos):
