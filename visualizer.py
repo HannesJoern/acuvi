@@ -124,30 +124,30 @@ def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_vi
         redfac = 1
         greenfac = 1
         bluefac = 1
-        intensity = 400
+        intensity = 255
         fall_add_factor = fall_fac
         rise_sub_factor = rise_fac
         value = np.abs(frequency_dist[j] * norm_factor) * intensity
 
-        if j < 40:
+        if j < 35:
             redfac = 0
             greenfac = 0
             bluefac = 1
-        if j >= 40 and j < 60:
-            redfac = np.power(float(j - 40)/20, 1)
+        if j >= 35 and j < 50:
+            redfac = np.power(float(j - 35)/15, 1)
             greenfac = 0
-            bluefac = np.power(float(60 - j)/20, 1)
-        if j >= 60 and j <= 80:
-            redfac = np.power(float(80 - j)/20, 1)
-            greenfac = np.power(float(j - 60)/20, 1)
+            bluefac = np.power(float(50 - j)/15, 1)
+        if j >= 50 and j <= 65:
+            redfac = np.power(float(65 - j)/15, 1)
+            greenfac = np.power(float(j - 50)/15, 1)
             bluefac = 0
-        if j >= 80 and j <= 100:
+        if j >= 65 and j <= 80:
             redfac = 0
-            greenfac = np.power(float(100 - j)/20, 1)
-            bluefac = np.power(float(j - 80)/20, 1)
+            greenfac = np.power(float(80 - j)/15, 1)
+            bluefac = np.power(float(j - 65)/15, 1)
 
         # highs
-        if j>100:
+        if j>85:
             bluefac = 1
             redfac = 1
             greenfac = 1

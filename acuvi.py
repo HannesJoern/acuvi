@@ -19,36 +19,25 @@ CHUNKSIZE = RATE/RATE_INTENSITY
 NUM_PIXELS = 200
 empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
-arraysize = 50
+arraysize = 100
 @numba.jit(nopython=True)
 def transformVis(smol_visualization, fast_visualization, visualization):
     # highs / inner ring
     for j in range(16):
         for k in range(3):
             for l in range(50):
-                if l >= 20:
-                    smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])*float(l)/20
-                else:
-                    smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])
+                smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])
     # middle: 30-42
     for j in range(22):
         for k in range(3):
-            for l in range(70):
-                if l < 10:
-                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])*float(l - 10)/10
-                elif l >= 20 and l < 50:
-                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])
-                elif l > 50:
-                    smol_visualization[31 +  j][k] += (1/5)*float(visualization[30 + l][k])*float(70 - l)/10
+            for l in range(45):
+                smol_visualization[31 +  j][k] += (1/2)*float(visualization[35 + l][k])
 
     # outer ring: 1 - 27
     for j in range(27):
         for k in range(3):
-            for l in range(60):
-                if l < 40:
-                    smol_visualization[1 + j][k] += (1/10)*float(visualization[l][k])
-                else:
-                    smol_visualization[1 + j][k] += (1/10)*float(visualization[l][k])*float(60 - l)/20
+            for l in range(35):
+                smol_visualization[1 + j][k] += (1/2)*float(visualization[l][k])
 
     return smol_visualization
 
@@ -120,8 +109,8 @@ def main():
                 if counter > 1:
                     print("overrun!!")
 
-            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 50) * CHUNKSIZE) : ])
-            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 10) * CHUNKSIZE) : ])
+            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 100) * CHUNKSIZE) : ])
+            fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 20) * CHUNKSIZE) : ])
             """for i in range(len(visualization_left)):
                 for k in range(3):
                     mean = (visualization_left[i][k] + visualization_right[i][k])/2

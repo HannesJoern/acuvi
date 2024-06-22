@@ -75,8 +75,8 @@ def normalize(frequency_dist, volume_history, volume_history_pos):
         max_value = np.max(frequency_dist)
         volume_history[volume_history_pos] = max_value
         mean_volume = np.mean(volume_history)
-        if(mean_volume < 10000):
-            frequency_dist = frequency_dist/10000
+        if(mean_volume < 0.1):
+            frequency_dist = frequency_dist/0.1
         else:
             frequency_dist = frequency_dist/mean_volume
         volume_history_pos += 1
