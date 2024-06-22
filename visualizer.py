@@ -107,7 +107,7 @@ def applyExponentAndUpperLower(frequency_dist, exponent, upper_part, lower_part)
     for j in range(len(frequency_dist) - 1):
         if j < 36:
             frequency_dist[j] = frequency_dist[j] * lower_part
-        if j > 100:
+        if j > 80:
             frequency_dist[j] = frequency_dist[j] * upper_part
         frequency_dist[j] = frequency_dist[j]**exponent
     return frequency_dist
@@ -147,7 +147,7 @@ def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_vi
             bluefac = np.power(float(j - 65)/15, 1)
 
         # highs
-        if j>85:
+        if j>80:
             bluefac = 1
             redfac = 1
             greenfac = 1

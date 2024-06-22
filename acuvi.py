@@ -40,7 +40,7 @@ def transformVis(smol_visualization, fast_visualization, visualization):
     for j in range(70):
         for k in range(3):
             for l in range(80):
-                smol_visualization[j][k] += (1/2)*float(fast_visualization[l][k])
+                smol_visualization[j][k] += (1/2)*float(visualization[l][k])
     """# outer ring: 1 - 27
     for j in range(27):
         for k in range(3):
@@ -117,7 +117,7 @@ def main():
                 if counter > 1:
                     print("overrun!!")
 
-            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 100) * CHUNKSIZE) : ])
+            visualization  = audio_processor.audioWorker(last_audiosamples[int((arraysize - 40) * CHUNKSIZE) : ])
             fast_visualization = fast_audio_processor.audioWorker(last_audiosamples[int((arraysize - 20) * CHUNKSIZE) : ])
             """for i in range(len(visualization_left)):
                 for k in range(3):
