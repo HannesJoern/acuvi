@@ -21,6 +21,7 @@ empty_color_val = "0x000000" #LED Leiste
 empty_color_val_display = "#%02x%02x%02x" % (0, 0, 0) #RGBdisplay
 arraysize = 100
 @numba.jit(nopython=True)
+# for background visualization
 def transformVis(smol_visualization, fast_visualization, visualization):
     # highs / inner ring
     for j in range(16):
@@ -28,16 +29,16 @@ def transformVis(smol_visualization, fast_visualization, visualization):
             for l in range(50):
                 smol_visualization[54 + j][k] += (1/20)*float(fast_visualization[80 + l][k])
     # middle: 30-42
-    for j in range(22):
+    for j in range(42):
         for k in range(3):
-            for l in range(45):
-                smol_visualization[31 +  j][k] += (1/2)*float(visualization[35 + l][k])
+            for l in range(80):
+                smol_visualization[j][k] += (1/2)*float(visualization[l][k])
 
-    # outer ring: 1 - 27
+    """# outer ring: 1 - 27
     for j in range(27):
         for k in range(3):
             for l in range(35):
-                smol_visualization[1 + j][k] += (1/2)*float(visualization[l][k])
+                smol_visualization[1 + j][k] += (1/2)*float(visualization[l][k])"""
 
     return smol_visualization
 
