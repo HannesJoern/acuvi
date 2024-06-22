@@ -40,7 +40,7 @@ def transformVis(smol_visualization, fast_visualization, visualization):
     for j in range(70):
         for k in range(3):
             for l in range(80):
-                smol_visualization[j][k] += (1/2)*float(visualization[l][k])
+                smol_visualization[j][k] += (1/2)*float(fast_visualization[l][k])
     """# outer ring: 1 - 27
     for j in range(27):
         for k in range(3):
