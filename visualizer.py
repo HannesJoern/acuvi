@@ -1,116 +1,144 @@
+"""Turns a per-pixel frequency distribution into actual RGB colors for display.
+
+Handles: temporal smoothing (so colors rise/fall smoothly instead of flickering frame to
+frame), a configurable exponent/gain curve, and a fixed low/mid/high color mapping so bass
+frequencies render blue, mids render red/green, and highs render white.
+"""
+
+import csv
+import os
+import time as tm
+
+import numba
 import numpy as np
+
 from sharedFunctions import *
 
-import matplotlib.pyplot as plt
+# Live-tunable parameters (brightness, smoothing, etc.) are read from this CSV file,
+# which the Dash UI in server.py writes to. This lets you tweak the look of the
+# visualization while it's running, without restarting the process.
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.csv")
 
-class Visualizer():
-    def __init__(self, RATE, CHUNKSIZE, CHUNKTIME, FPS, NUM_PIXELS):
+
+class Visualizer:
+    """Converts a frequency distribution into a colored, temporally-smoothed pixel array."""
+
+    def __init__(self, RATE, RATE_INTENSITY, RATE_FREQUENCY, NUM_PIXELS):
         self.RATE = RATE
-        self.CHUNKSIZE = CHUNKSIZE
-        self.CHUNKTIME = CHUNKTIME
-        self.FPS = FPS
+        self.RATE_INTENSITY = RATE_INTENSITY
+        self.RATE_FREQUENCY = RATE_FREQUENCY
         self.NUM_PIXELS = NUM_PIXELS
+        self.r_down_intens = self.RATE / self.RATE_INTENSITY
+        self.r_down_freq = self.RATE / self.RATE_FREQUENCY
         self.max_rgb = 255
 
+        self.prev_values = np.zeros(self.NUM_PIXELS)
 
-        self.len_vis = FPS*CHUNKTIME #size of chunk of vis_samples
-        self.prev_vis_data = np.array([[[0 for i in range(self.len_vis)] for j in range(2)] for k in range(4)])
-        self.r_down = RATE/FPS #downsampling rate
-        init_norm_factor = 1 #normalization factor
-        self.norm_factors = np.array([init_norm_factor for i in range(4)])
+        # Tunable parameters, overwritten by readConfig() from data.csv.
+        self.norm_factor = 0.01   # overall brightness scaling
+        self.rise_fac = 0.9       # temporal smoothing when intensity increases
+        self.fall_fac = 0.9       # temporal smoothing when intensity decreases
+        self.exponent = 1         # gain curve exponent, sharpens/softens response
+        self.lower_part = 1       # scaling applied to low (bass) frequencies
+        self.upper_part = 1       # scaling applied to high (treble) frequencies
 
+        # How often (in calls to visualize()) to re-read the config file from disk.
+        self.readconfigcounter = 0
+        self.READCONFIG_INTERVAL = 10
 
-    def visualize(self, spleeter_data):
+    def readConfig(self):
+        """Reload the tunable parameters from data.csv, written live by the Dash UI."""
+        try:
+            with open(CONFIG_PATH, 'r', newline='') as f:
+                rd = csv.reader(f, delimiter=',')
+                for row in rd:
+                    self.norm_factor = float(row[0])
+                    self.rise_fac = float(row[1])
+                    self.fall_fac = float(row[2])
+                    self.exponent = float(row[3])
+                    self.upper_part = float(row[4])
+                    self.lower_part = float(row[5])
+        except (OSError, ValueError, IndexError):
+            print("couldn't read config file, keeping previous values")
 
-        #convert into array
-        vocals = np.array([spleeter_data['vocals'][:,0], spleeter_data['vocals'][:,1]])
-        other = np.array([spleeter_data['other'][:,0], spleeter_data['other'][:,1]])
-        bass = np.array([spleeter_data['bass'][:,0], spleeter_data['bass'][:,1]])
-        drums = np.array([spleeter_data['drums'][:,0], spleeter_data['drums'][:,1]])
-        spleeter_data = np.array([vocals, other, bass, drums])
+    def visualize(self, waveform, frequency_dist):
+        """Produce one frame of RGB values (shape: NUM_PIXELS x 3) for the given frequency data."""
+        if self.readconfigcounter >= self.READCONFIG_INTERVAL:
+            self.readConfig()
+            self.readconfigcounter = 0
+        else:
+            self.readconfigcounter += 1
 
-        #sample down to FPS of visualization
-        vis_data = self.sample_down(spleeter_data)
+        self.prev_values, keyboard_visualization = self.createKeyboardVisualization(
+            frequency_dist, self.prev_values, self.norm_factor,
+            self.rise_fac, self.fall_fac, self.exponent,
+        )
+        return keyboard_visualization
 
-        #vis_data = self.apply_temp_blur(vis_data) - this feature is not yet used
-
-
-        #normalization to fit into [0 ... 255] RGB value spectrum for each individual part with:
-        vis_data = self.normalize(vis_data)
-        
-        #initialize array of vis_samples
-        visualization = np.array([["0X000000" for j in range(self.NUM_PIXELS)] for k in range(self.len_vis)])
-
-        for i in range(self.len_vis):
-
-            visualization[i][0] = rgb_to_hex(0, 0, vis_data[0][0][i])
-            visualization[i][1] = rgb_to_hex(0, vis_data[1][0][i], vis_data[1][0][i])
-            visualization[i][2] = rgb_to_hex(0, vis_data[2][0][i], 0)
-            visualization[i][3] = rgb_to_hex(vis_data[3][0][i], 0, 0)
-            visualization[i][4] = rgb_to_hex(vis_data[3][1][i], 0, 0)
-            visualization[i][5] = rgb_to_hex(0, vis_data[2][1][i], 0)
-            visualization[i][6] = rgb_to_hex(0, vis_data[1][1][i], vis_data[1][1][i])
-            visualization[i][7] = rgb_to_hex(0, 0, vis_data[0][1][i])
-
-        #array of 300 processed vis_samples
-        return visualization
-
-
-        #self.prev_vis_data = vis_data - used for temporal bluring
-        
-
-
-
-    #Updating-Normalization-Factor-Finding-Function that always adjusts to highest observed value in each session, starting with normfac_init
-    def update_norm_factor(self, k, max):
-        if self.norm_factors[k]*max > self.max_rgb:
-            self.norm_factors[k] = self.max_rgb/max
-
-    #normalization function
-    def normalize(self, vis_data):
-        for k in range(4):
+    def createKeyboardVisualization(self, frequency_dist, prev_values, norm_factor, rise_fac, fall_fac, exponent):
+        """Apply the gain curve, then convert to smoothed, colored pixel values."""
+        keyboard_visualization = np.zeros((self.NUM_PIXELS, 3), dtype=float)
+        frequency_dist = applyExponentAndUpperLower(
+            frequency_dist, exponent, self.upper_part, self.lower_part
+        )
+        keyboard_visualization, prev_values = applyColorsAndFallRise(
+            norm_factor, prev_values, frequency_dist, keyboard_visualization,
+            rise_fac, fall_fac, self.NUM_PIXELS,
+        )
+        return prev_values, keyboard_visualization
 
 
-
-            self.update_norm_factor(k, np.amax(vis_data[k]))
-            vis_data[k] = vis_data[k] * self.norm_factors[k]
-        return vis_data
-
-    #tempural blurring
-    def apply_temp_blur(self, vis_data):
-        # iterate through audio channels
-        for k in range(4):
-            # iterate through r/l:
-            for j in range(2):
-                # iterate through visual samples
-                    for i in range(self.len_vis):
-                            #temporal blurring
-                            if i > 0:    
-                                if vis_data[k][j][i-1] > vis_data[k][j][i]:
-                                    vis_data[k][j][i] = vis_data[k][j][i-1]*0.8
-                            if i == 0:
-                                if self.prev_vis_data[k][j][self.len_vis-1] > vis_data[k][j][i]:
-                                    vis_data[k][j][i] = self.prev_vis_data[k][j][self.len_vis-1]*0.8
-
-        return vis_data
-
-    #downsampling from audio RATE to visualization FPS
-    def sample_down(self, spleeter_data):
-        vis_data = np.array([[[0 for i in range(self.len_vis)] for j in range(2)] for k in range(4)])
-        # iterate through audio channels
-        for k in range(4):
-            # iterate through r/l:
-            for j in range(2):
-                # iterate through visual samples
-                    for i in range(self.len_vis):
-                        # first need to check if there is anything nonzero
-                        if np.any(spleeter_data[k][j][int(i*self.r_down):int((i+1)*self.r_down-1)]):
-                            # to then find the maximum. this is a vis_sample
-                            vis_data[k][j][i] = int(np.max(spleeter_data[k][j][int(i*self.r_down):int((i+1)*self.r_down-1)]))
-        #array of 300 raw vis_samples
-        return vis_data
+@numba.jit(nopython=True)
+def applyExponentAndUpperLower(frequency_dist, exponent, upper_part, lower_part):
+    """Scale the low/high ends of the spectrum independently, then apply the gain exponent."""
+    for j in range(len(frequency_dist) - 1):
+        if j < 36:
+            frequency_dist[j] = frequency_dist[j] * lower_part
+        if j > 100:
+            frequency_dist[j] = frequency_dist[j] * upper_part
+        frequency_dist[j] = frequency_dist[j] ** exponent
+    return frequency_dist
 
 
+@numba.jit(nopython=True)
+def applyColorsAndFallRise(norm_factor, prev_values, frequency_dist, keyboard_visualization, rise_fac, fall_fac, no_pixels):
+    """Map each pixel's intensity to an RGB color based on its position in the spectrum
+    (bass = blue, low-mid = blue/red blend, mid = red/green blend, high-mid = green/blue
+    blend, treble = white), and smooth each pixel's brightness over time so it rises/falls
+    gradually instead of flickering with every frame.
+    """
+    intensity = 400
 
+    for j in range(no_pixels):
+        value = np.abs(frequency_dist[j] * norm_factor) * intensity
 
+        # Color mapping by frequency band.
+        if j < 40:
+            redfac, greenfac, bluefac = 0.0, 0.0, 1.0
+        elif j < 60:
+            redfac = np.power(float(j - 40) / 20, 1)
+            greenfac = 0.0
+            bluefac = np.power(float(60 - j) / 20, 1)
+        elif j <= 80:
+            redfac = np.power(float(80 - j) / 20, 1)
+            greenfac = np.power(float(j - 60) / 20, 1)
+            bluefac = 0.0
+        elif j <= 100:
+            redfac = 0.0
+            greenfac = np.power(float(100 - j) / 20, 1)
+            bluefac = np.power(float(j - 80) / 20, 1)
+        else:
+            redfac, greenfac, bluefac = 1.0, 1.0, 1.0
 
+        # Temporal smoothing: ease towards the new value instead of jumping straight to it.
+        if value < prev_values[j]:
+            value = value + (prev_values[j] - value) * fall_fac
+        else:
+            value = value - (value - prev_values[j]) * rise_fac
+        prev_values[j] = value
+
+        value = min(max(value, 0), 255)
+
+        keyboard_visualization[j] = np.array([int(redfac * value), int(greenfac * value), int(bluefac * value)])
+
+    return keyboard_visualization, prev_values

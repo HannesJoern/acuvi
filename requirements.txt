@@ -1,0 +1,17 @@
+# Core audio/visualization pipeline
+numpy
+scipy
+numba
+pyaudio
+multiprocess
+
+# On-screen display mode (rgbDisplay.py) and the tuning server (server.py)
+Pillow
+dash
+flask
+
+# Physical LED output mode only (mode 0 in acuvi.py) - typically run on a
+# Raspberry Pi / Jetson Nano with an SPI-connected LED strip. Not needed if
+# you're only running the on-screen display mode.
+# adafruit-blinka
+# adafruit-circuitpython-neopixel-spi

@@ -1,38 +1,82 @@
 # acuvi
-the worlds smartest music visualizer
 
-vis_sample: beschreibt wie die led leuchten müssen: array mit länge n (bei n leds) wo jeder wert die hexadezimal darstellung
-          der rgb values ist. index n beschreibt die farbe von led nr.n. wenn die leds in einer 2d form sind (also zb rechteck usw.)
-          dann ist der oberste linke led nr.0 und der unterste rechte nr. n
+A real-time, music-synchronized LED/light visualizer.
 
-spleeter_data: daten von spleeter, genauso wie spleeter sie ausgibt in der python API. wahrscheinlich ist das auch fast das gleiche, wie wenn man die .wav Dateien einliest
+## Backstory
 
-## visualizer(spleeter_data):
-...
-## return array of / list of n vis_samples:
-Diese Funktion ist unsere Schnittstelle, die sowohl von realtime spleeter als auch von file-based spleeter benutzt wird und so ausgetauscht werden kann.
-Sie nimmt spleeter-daten (rohe audio daten) und gibt n vis_samples (in hexadezimal) aus.
-Die funktion ist in einer Klasse, die in ihrem Konstruktor alle Parameter entgegennimmt.
+acuvi started as a hobby project by two university students who wanted to
+practice their Python skills. The idea was a shared annoyance: at most events, the automated visualization is only loosely reacting to the volume. Not being satisfied with that, we wanted to build a system that treats sound as a spectrum of frequencies changing every fraction of a second. acuvi listens to live audio, breaks it down into a frequency spectrum mapped
+onto musical (piano-key) intervals and turns that into a color and brightness pattern that follows the music in real time, smoothed just enough to look appealing to the eye.
 
+## How it works
 
+```
+microphone --> FFT (piano-key frequency bins) --> color mapping --> LED strip / on-screen display
+```
 
+1. **Audio capture** (`audioIn.py`) runs in its own process and streams raw audio chunks
+   from the system's audio input into a queue, using PyAudio.
+2. **Frequency analysis** (`fftWorker.py`) runs an FFT on a rolling window of recent audio
+   and buckets the result by musical note (piano key).
+   Output is normalized against a rolling average of recent volume.
+3. **Color mapping** (`visualizer.py`) maps each frequency bin to an RGB color based on its
+   position in the spectrum, and applies temporal smoothing (configurable rise/fall rates). gain/exponent curve and independent
+   low/high scaling let you shape the response.
+4. **Output** (`acuvi.py`) downmixes the full-resolution spectrum onto the physical LED
+   layout (an outer/middle/inner ring arrangement) or an on-screen grid, and pushes a new
+   frame out at 147 Hz.
+5. **Live tuning** (`server.py`) is a small Dash web UI with sliders for brightness,
+   smoothing, and gain. It writes to `data.csv`, which the visualizer reloads periodically so you can adjust the look live.
 
-alte beschreibung:
+Two passes run per frame: One over a longer audio window for the overall spectrum, and another one over just the most recent samples so percussive highs stay responsive even with heavier smoothing on the main pass.
 
-spleeter_data: (einen dictionary mit 4 einträge:(voice,drums,bass,other) diese einträge sind listen die an stelle n den n-ten sample beinhalten
-               in der form (right_sample,left_sample). Zusätzlich soll als information die samplerate gegeben werden. Bei dem hinzufügen neuer samples,
-               werden einfach die neuen daten am ende der listen im dictionary hinzugefügt damit man an n-ter stelle den n-ten sample in der liste hat.
-               Dieses vorgehen hat aber einen Problem, wen wir den n_ten sample an der n_ten stelle haben möchten dann wird die liste immer länger bis wir keinen
-               speicher mehr haben, deshalb müssen wir nach dem benutzen der ersen x samples zur visualisierung sie von den listen entfernen und die anzahl der
-               vom start des programms entfernten samples in einer variable speichern.)
+## Hardware modes
 
-so funktioniert das ganze:
-  
-               real time separation (1.writes in variable the sample rate of its output -> 2.starts separation -> 3.gets audio data for with a legth of 10 seconds
-               -> 4.separates it-> 5.writes the data into the dictionary -> go to step 3)
-               
-               creation of data for visulization (gets chunks of the data that is separated -> deletes the data from the source -> elaborates the data 
-               -> output looks like what is described in vis_data)
-               
-               the data for visualization is in the end used to vizualise the sound on whatever media is choosen by the user, be it a window on the computer, led lights,
-               etc.
+`acuvi.py` supports two output modes, set via the `MODE` constant at the top of the file:
+
+- `MODE = 0` - drives a physical LED strip over SPI (via `board` / `neopixel_spi`),
+  originally run on a Raspberry Pi / Jetson Nano.
+- `MODE = 1` - renders to an on-screen grid of colored squares (`rgbDisplay.py`) using
+  Tkinter, useful for development without any LED hardware attached.
+
+## Running it
+
+```bash
+pip install -r requirements.txt
+```
+
+If you're using the physical LED output (`MODE = 0`), also install the SPI/LED
+dependencies listed (commented out) at the bottom of `requirements.txt` - these are
+platform-specific.
+
+Start the visualizer:
+
+```bash
+python acuvi.py
+```
+
+By default it listens on audio input device index 11 (see `audioIn.py`) - you'll likely
+need to change this to match your system's microphone/line-in device index.
+
+Optionally, start the live tuning UI in a separate terminal:
+
+```bash
+python server.py
+```
+
+Then open `http://localhost:8008/dash/` to adjust brightness, smoothing, and gain while
+acuvi is running.
+
+## Project layout
+
+| File | Responsibility |
+|---|---|
+| `acuvi.py` | Main entry point: audio buffering, LED-layout downmixing, output loop |
+| `audioIn.py` | Live audio capture (PyAudio), runs in its own process |
+| `audioWorker.py` | Combines the FFT and color-mapping steps for one audio chunk |
+| `fftWorker.py` | FFT + mapping of frequencies onto piano-key bins, with normalization |
+| `visualizer.py` | Frequency-to-color mapping and temporal smoothing |
+| `rgbDisplay.py` | Tkinter-based on-screen LED stand-in for development |
+| `server.py` | Dash/Flask UI for live-tuning visualization parameters |
+| `sharedFunctions.py` | Small shared helpers (color conversion, clamping) |
+| `data.csv` | Current tunable parameters (brightness, smoothing, gain), shared between `visualizer.py` and `server.py` |
