@@ -1,6 +1,6 @@
 # acuvi
 
-A real-time, music-synchronized LED/light visualizer.
+Maps the log-frequencies of a real-time music signal to the color spectrum (weighted by their magnitude) and displays it on a WS2812 LED strip. Runs at 140 Hz on a Jatson Nano
 
 ## How it works
 
