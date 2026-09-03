@@ -2,12 +2,6 @@
 
 A real-time, music-synchronized LED/light visualizer.
 
-## Backstory
-
-acuvi started as a hobby project by two university students who wanted to
-practice their Python skills. The idea was a shared annoyance: at most events, the automated visualization is only loosely reacting to the volume. Not being satisfied with that, we wanted to build a system that treats sound as a spectrum of frequencies changing every fraction of a second. acuvi listens to live audio, breaks it down into a frequency spectrum mapped
-onto musical (piano-key) intervals and turns that into a color and brightness pattern that follows the music in real time, smoothed just enough to look appealing to the eye.
-
 ## How it works
 
 ```
